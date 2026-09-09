@@ -21,12 +21,18 @@ export default function QuizRunnerPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    // Guard: quiz de temperamento tem rota dedicada
+    if (quizId === 'quiz-temperamento') {
+      router.replace('/quizzes/temperamento');
+      return;
+    }
+
     const loadedQuizzes = getStoredQuizzes();
     const found = loadedQuizzes.find((q) => q.id === quizId);
     if (found) {
       setQuiz(found);
     }
-  }, [quizId]);
+  }, [quizId, router]);
 
   if (!quiz || !quiz.questions || quiz.questions.length === 0) {
     return (

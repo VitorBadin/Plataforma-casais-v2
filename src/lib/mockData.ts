@@ -50,6 +50,25 @@ export const INITIAL_PROFILES: Profile[] = [
 
 export const INITIAL_QUIZZES: Quiz[] = [
   {
+    id: 'quiz-temperamento',
+    titulo: 'Teste de Temperamento',
+    descricao: 'Descubra seu temperamento predominante (Colérico, Sanguíneo, Melancólico ou Fleumático) e entenda como ele influencia seus relacionamentos.',
+    categoria: 'Temperamento',
+    ativo: true,
+    criado_em: '2026-09-01T10:00:00Z',
+    questions: [
+      // As perguntas reais estão em temperamentoData.ts
+      // Estas são placeholders para contagem na listagem
+      ...Array.from({ length: 23 }, (_, i) => ({
+        id: `qt-${i + 1}`,
+        quiz_id: 'quiz-temperamento',
+        texto: `Pergunta ${i + 1}`,
+        tipo: 'multipla_escolha' as const,
+        ordem: i + 1,
+      })),
+    ],
+  },
+  {
     id: 'quiz-1',
     titulo: 'Mapeamento da Saúde da Comunicação no Relacionamento',
     descricao: 'Identifique os padrões de escuta, reatividade e abertura emocional que impactam o diálogo cotidiano do casal.',
