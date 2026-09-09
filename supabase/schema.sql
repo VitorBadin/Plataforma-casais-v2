@@ -230,7 +230,60 @@ CREATE POLICY "Registro de visualizacao propria" ON public.resource_views
   FOR INSERT WITH CHECK (auth.uid() = user_id AND public.is_ativo());
 
 -- ========================================================
+-- QUIZ DE TEMPERAMENTO (Tabelas Especializadas)
+-- ========================================================
+
+-- 9. TABELA DE RESPOSTAS DO QUIZ DE TEMPERAMENTO (quiz_temperamento_answers)
+CREATE TABLE IF NOT EXISTS public.quiz_temperamento_answers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  question_number INT NOT NULL,
+  resposta TEXT NOT NULL,
+  pontos_atribuidos INT NOT NULL,
+  temperamento_atribuido TEXT NOT NULL CHECK (temperamento_atribuido IN ('colerico', 'sanguineo', 'melancolico', 'fleumatico')),
+  respondido_em TIMESTAMPTZ DEFAULT now()
+);
+
+-- 10. TABELA DE RESULTADOS DO QUIZ DE TEMPERAMENTO (quiz_temperamento_results)
+CREATE TABLE IF NOT EXISTS public.quiz_temperamento_results (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  colerico_pontos INT NOT NULL DEFAULT 0,
+  sanguineo_pontos INT NOT NULL DEFAULT 0,
+  melancolico_pontos INT NOT NULL DEFAULT 0,
+  fleumatico_pontos INT NOT NULL DEFAULT 0,
+  temperamento_primario TEXT NOT NULL CHECK (temperamento_primario IN ('colerico', 'sanguineo', 'melancolico', 'fleumatico')),
+  intensidade_primario TEXT NOT NULL CHECK (intensidade_primario IN ('Forte', 'Moderado', 'Equilibrado')),
+  temperamento_secundario TEXT CHECK (temperamento_secundario IN ('colerico', 'sanguineo', 'melancolico', 'fleumatico')),
+  intensidade_secundario TEXT CHECK (intensidade_secundario IN ('Forte', 'Moderado', 'Equilibrado')),
+  calculado_em TIMESTAMPTZ DEFAULT now()
+);
+
+-- INDEXES PARA QUIZ DE TEMPERAMENTO
+CREATE INDEX IF NOT EXISTS idx_temp_answers_user ON public.quiz_temperamento_answers(user_id);
+CREATE INDEX IF NOT EXISTS idx_temp_results_user ON public.quiz_temperamento_results(user_id);
+
+-- RLS PARA QUIZ DE TEMPERAMENTO
+ALTER TABLE public.quiz_temperamento_answers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quiz_temperamento_results ENABLE ROW LEVEL SECURITY;
+
+-- POLÍTICAS: QUIZ TEMPERAMENTO ANSWERS
+CREATE POLICY "Leitura de respostas temperamento proprias" ON public.quiz_temperamento_answers
+  FOR SELECT USING (auth.uid() = user_id OR public.is_admin());
+
+CREATE POLICY "Insercao de respostas temperamento proprias" ON public.quiz_temperamento_answers
+  FOR INSERT WITH CHECK (auth.uid() = user_id AND public.is_ativo());
+
+-- POLÍTICAS: QUIZ TEMPERAMENTO RESULTS
+CREATE POLICY "Leitura de resultados temperamento proprios" ON public.quiz_temperamento_results
+  FOR SELECT USING (auth.uid() = user_id OR public.is_admin());
+
+CREATE POLICY "Insercao de resultados temperamento proprios" ON public.quiz_temperamento_results
+  FOR INSERT WITH CHECK (auth.uid() = user_id AND public.is_ativo());
+
+-- ========================================================
 -- BUCKET DE STORAGE SUPABASE (PDFs e Materiais)
 -- ========================================================
 -- Executar no painel do Supabase Storage ou via SQL:
 -- INSERT INTO storage.buckets (id, name, public) VALUES ('materiais', 'materiais', true);
+
