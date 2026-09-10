@@ -27,6 +27,7 @@ import {
   Users,
   Compass,
   Calendar,
+  Brain,
 } from 'lucide-react';
 
 export default function TemperamentoRelatorioCompletoPage() {
@@ -136,15 +137,13 @@ export default function TemperamentoRelatorioCompletoPage() {
         />
 
         {/* Topo Institucional */}
-        <div className="border-b border-brand-100 pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative">
-          <div className="flex items-center gap-4">
-            <img
-              src="/logo.png"
-              alt="Psi Elaine Souza Logo"
-              className="h-16 sm:h-20 w-auto object-contain shrink-0 mix-blend-multiply"
-            />
+        <div className="border-b border-brand-100 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-4">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 shrink-0">
+              <Brain className="w-6 h-6" />
+            </div>
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-brand-600">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-brand-600 bg-brand-50/80 px-2.5 py-0.5 rounded-full border border-brand-200/60 inline-block mb-1">
                 Laudo Psicológico de Perfil
               </span>
               <h1 className="text-xl sm:text-2xl font-bold text-warm-900 font-heading">
@@ -153,7 +152,7 @@ export default function TemperamentoRelatorioCompletoPage() {
             </div>
           </div>
 
-          <div className="bg-rose-soft border border-brand-100 p-3 rounded-2xl text-left sm:text-right shrink-0">
+          <div className="bg-rose-soft/80 border border-brand-100 px-4 py-2.5 rounded-2xl text-left md:text-right shrink-0">
             <span className="text-[11px] text-warm-700 block font-medium">Data do Preenchimento</span>
             <span className="text-xs font-bold text-brand-700">{dataFormatada}</span>
           </div>

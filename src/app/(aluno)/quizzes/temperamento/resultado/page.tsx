@@ -105,30 +105,22 @@ export default function TemperamentoResultadoPage() {
       {/* HERO CARD — Temperamento Primário */}
       {/* ============================================================ */}
       <div className="bg-white rounded-3xl p-6 sm:p-10 border border-brand-100 shadow-soft relative overflow-hidden">
-        {/* Decorative gradient blob */}
-        <div
-          className={`absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-gradient-to-br ${primMeta.gradientFrom} ${primMeta.gradientTo} rounded-full blur-3xl opacity-15 pointer-events-none`}
-        />
-
-        {/* Header */}
-        <div className="border-b border-brand-100 pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative">
-          <div className="flex items-center gap-4">
-            <img
-              src="/logo.png"
-              alt="Psi Elaine Souza Logo"
-              className="h-16 sm:h-20 w-auto object-contain shrink-0 mix-blend-multiply"
-            />
-            <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-brand-600">
-                Resultado — Teste de Temperamento
-              </span>
-              <h1 className="text-xl sm:text-2xl font-bold text-warm-900 font-heading">
-                Seu Perfil de Temperamento
-              </h1>
+        {/* Header (Sem logo, layout limpo e sem sobreposição) */}
+        <div className="border-b border-brand-100 pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold uppercase tracking-wider">
+              <Award className="w-3.5 h-3.5 text-brand-600" />
+              <span>Resultado — Teste de Temperamento</span>
             </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-warm-900 font-heading">
+              Seu Perfil de Temperamento
+            </h1>
+            <p className="text-xs text-warm-700">
+              Mapeamento de intensidade dos 4 temperamentos e diagnóstico personalizado.
+            </p>
           </div>
 
-          <div className="bg-rose-soft border border-brand-100 p-3 rounded-2xl text-right shrink-0">
+          <div className="bg-rose-soft/80 border border-brand-100 px-4 py-2.5 rounded-2xl self-start sm:self-auto text-left sm:text-right shrink-0">
             <span className="text-[11px] text-warm-700 block font-medium">Calculado em</span>
             <span className="text-xs font-bold text-brand-700">
               {new Date(resultado.calculado_em).toLocaleDateString('pt-BR', {
@@ -160,9 +152,6 @@ export default function TemperamentoResultadoPage() {
           <div
             className={`p-5 rounded-2xl border-2 ${primMeta.borderColor} ${primMeta.bgLight} relative overflow-hidden`}
           >
-            <div
-              className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${primMeta.gradientFrom} ${primMeta.gradientTo} rounded-full blur-2xl opacity-20 -mt-6 -mr-6 pointer-events-none`}
-            />
             <div className="relative">
               <span className="text-xs font-bold text-warm-700 uppercase tracking-wider block mb-1">
                 Temperamento Primário
@@ -177,7 +166,7 @@ export default function TemperamentoResultadoPage() {
                 <span className={`text-xl font-bold font-heading ${primMeta.textColor}`}>
                   {resultado.pontuacoes[resultado.temperamento_primario]} pts
                 </span>
-                <span className="text-[11px] text-warm-700 font-medium bg-white/60 px-2 py-0.5 rounded-full">
+                <span className="text-[11px] text-warm-700 font-medium bg-white/70 border border-warm-200/50 px-2.5 py-0.5 rounded-full">
                   {resultado.intensidade_primario}
                 </span>
               </div>
@@ -189,11 +178,8 @@ export default function TemperamentoResultadoPage() {
 
           {/* Secundário */}
           <div
-            className={`p-5 rounded-2xl border ${secMeta.borderColor} bg-white relative overflow-hidden`}
+            className={`p-5 rounded-2xl border ${secMeta.borderColor} bg-white relative overflow-hidden shadow-xs`}
           >
-            <div
-              className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-br ${secMeta.gradientFrom} ${secMeta.gradientTo} rounded-full blur-2xl opacity-10 -mt-4 -mr-4 pointer-events-none`}
-            />
             <div className="relative">
               <span className="text-xs font-bold text-warm-700 uppercase tracking-wider block mb-1">
                 Temperamento Secundário
@@ -208,7 +194,7 @@ export default function TemperamentoResultadoPage() {
                 <span className={`text-lg font-bold font-heading ${secMeta.textColor}`}>
                   {resultado.pontuacoes[resultado.temperamento_secundario]} pts
                 </span>
-                <span className="text-[11px] text-warm-700 font-medium bg-warm-50 px-2 py-0.5 rounded-full">
+                <span className="text-[11px] text-warm-700 font-medium bg-warm-50 border border-warm-200/50 px-2.5 py-0.5 rounded-full">
                   {resultado.intensidade_secundario}
                 </span>
               </div>
@@ -220,52 +206,104 @@ export default function TemperamentoResultadoPage() {
         </div>
 
         {/* ---- Gráfico de Barras — Todos os 4 Temperamentos ---- */}
-        <div className="bg-rose-soft/60 border border-brand-100 rounded-2xl p-5 space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <BarChart3 className="w-5 h-5 text-brand-600" />
-            <h3 className="text-sm font-bold text-warm-900 font-heading">
-              Pontuação Completa
-            </h3>
+        <div className="bg-rose-soft/60 border border-brand-100 rounded-3xl p-6 space-y-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-brand-600" />
+              <h3 className="text-sm font-bold text-warm-900 font-heading">
+                Pontuação Completa por Temperamento
+              </h3>
+            </div>
+            <span className="text-xs text-warm-700 font-medium">
+              Base: {MAX_PONTOS} pontos max.
+            </span>
           </div>
 
-          {TEMPERAMENTOS_ORDEM.map((t) => {
-            const meta = TEMPERAMENTO_META[t];
-            const pontos = resultado.pontuacoes[t];
-            const percent = Math.round((pontos / MAX_PONTOS) * 100);
-            const isPrimario = t === resultado.temperamento_primario;
-            const isSecundario = t === resultado.temperamento_secundario;
+          <div className="space-y-4">
+            {TEMPERAMENTOS_ORDEM.map((t) => {
+              const meta = TEMPERAMENTO_META[t];
+              const pontos = resultado.pontuacoes[t];
+              const percent = Math.min(100, Math.round((pontos / MAX_PONTOS) * 100));
+              const isPrimario = t === resultado.temperamento_primario;
+              const isSecundario = t === resultado.temperamento_secundario;
 
-            return (
-              <div key={t} className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span>{meta.emoji}</span>
-                    <span className={`font-bold ${meta.textColor}`}>{meta.label}</span>
-                    {isPrimario && (
-                      <span className="text-[10px] font-bold text-white bg-brand-500 px-1.5 py-0.5 rounded-full">
-                        PRIMÁRIO
+              // Cores específicas e vibrantes para cada temperamento
+              const barStyles: Record<Temperamento, { gradient: string; solid: string; track: string; badge: string }> = {
+                colerico: {
+                  gradient: 'linear-gradient(90deg, #EF4444 0%, #F97316 100%)',
+                  solid: '#DC2626',
+                  track: 'bg-red-50 border-red-100',
+                  badge: 'bg-red-600 text-white',
+                },
+                sanguineo: {
+                  gradient: 'linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%)',
+                  solid: '#D97706',
+                  track: 'bg-amber-50 border-amber-100',
+                  badge: 'bg-amber-600 text-white',
+                },
+                melancolico: {
+                  gradient: 'linear-gradient(90deg, #3B82F6 0%, #6366F1 100%)',
+                  solid: '#4F46E5',
+                  track: 'bg-indigo-50 border-indigo-100',
+                  badge: 'bg-indigo-600 text-white',
+                },
+                fleumatico: {
+                  gradient: 'linear-gradient(90deg, #10B981 0%, #14B8A6 100%)',
+                  solid: '#059669',
+                  track: 'bg-emerald-50 border-emerald-100',
+                  badge: 'bg-emerald-600 text-white',
+                },
+              };
+
+              const styleConfig = barStyles[t];
+
+              return (
+                <div key={t} className="space-y-1.5 bg-white/80 p-3.5 rounded-2xl border border-warm-100 shadow-xs">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">{meta.emoji}</span>
+                      <span className={`font-bold text-sm ${meta.textColor}`}>{meta.label}</span>
+                      {isPrimario && (
+                        <span className="text-[10px] font-bold text-white bg-brand-600 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          PRIMÁRIO
+                        </span>
+                      )}
+                      {isSecundario && (
+                        <span className="text-[10px] font-bold text-warm-800 bg-warm-200 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          SECUNDÁRIO
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-warm-900 text-xs">
+                        {pontos}/{MAX_PONTOS} pts
                       </span>
-                    )}
-                    {isSecundario && (
-                      <span className="text-[10px] font-bold text-warm-700 bg-warm-200 px-1.5 py-0.5 rounded-full">
-                        SECUNDÁRIO
+                      <span className="text-xs font-bold text-warm-700 bg-warm-100 px-2 py-0.5 rounded-md">
+                        {percent}%
                       </span>
-                    )}
+                    </div>
                   </div>
-                  <span className="font-bold text-warm-900">
-                    {pontos}/{MAX_PONTOS}
-                  </span>
-                </div>
 
-                <div className="w-full bg-white rounded-full h-4 overflow-hidden border border-warm-200">
-                  <div
-                    className={`h-full rounded-full transition-all duration-700 ease-out bg-gradient-to-r ${meta.gradientFrom} ${meta.gradientTo}`}
-                    style={{ width: `${Math.max(percent, 5)}%` }}
-                  />
+                  {/* Barra de Progresso Preenchida com Cor Específica */}
+                  <div className={`w-full ${styleConfig.track} rounded-full h-4 overflow-hidden border shadow-inner relative`}>
+                    <div
+                      className="h-full rounded-full transition-all duration-700 ease-out flex items-center justify-end pr-2"
+                      style={{
+                        width: `${Math.max(percent, 4)}%`,
+                        background: styleConfig.gradient,
+                      }}
+                    >
+                      {percent >= 15 && (
+                        <span className="text-[10px] font-extrabold text-white leading-none drop-shadow-xs">
+                          {percent}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
         {/* ---- Legenda de Intensidade ---- */}
