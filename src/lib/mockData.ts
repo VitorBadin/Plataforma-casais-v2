@@ -294,7 +294,27 @@ export const getStoredQuizzes = (): Quiz[] => {
     localStorage.setItem('psi_quizzes', JSON.stringify(INITIAL_QUIZZES));
     return INITIAL_QUIZZES;
   }
-  return JSON.parse(stored);
+  try {
+    const parsed: Quiz[] = JSON.parse(stored);
+    const existingIds = new Set(parsed.map((q) => q.id));
+    let hasChanges = false;
+
+    // Garante que novos quizzes padrão (como quiz-temperamento) entrem na lista
+    for (const initQuiz of INITIAL_QUIZZES) {
+      if (!existingIds.has(initQuiz.id)) {
+        parsed.unshift(initQuiz);
+        hasChanges = true;
+      }
+    }
+
+    if (hasChanges) {
+      localStorage.setItem('psi_quizzes', JSON.stringify(parsed));
+    }
+    return parsed;
+  } catch {
+    localStorage.setItem('psi_quizzes', JSON.stringify(INITIAL_QUIZZES));
+    return INITIAL_QUIZZES;
+  }
 };
 
 export const saveStoredQuizzes = (quizzes: Quiz[]) => {

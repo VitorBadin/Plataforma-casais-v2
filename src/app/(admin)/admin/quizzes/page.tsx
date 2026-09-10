@@ -88,7 +88,7 @@ export default function AdminQuizzesListPage() {
               </button>
 
               <Link
-                href={`/quizzes/${quiz.id}`}
+                href={quiz.id === 'quiz-temperamento' ? '/quizzes/temperamento' : `/quizzes/${quiz.id}`}
                 className="px-4 py-2 rounded-xl bg-rose-soft border border-brand-200 text-brand-700 hover:bg-brand-50 text-xs font-bold transition-all flex items-center gap-1.5"
               >
                 <span>Testar como Aluno</span>

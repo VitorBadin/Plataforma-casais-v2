@@ -16,12 +16,25 @@ export default function QuizzesListPage() {
   useEffect(() => {
     setQuizzes(getStoredQuizzes());
     const storedDiags = localStorage.getItem(`psi_diagnostics_${user?.id}`);
+    const tempResult = localStorage.getItem(`psi_temperamento_result_${user?.id}`);
+
+    let ids: string[] = [];
     if (storedDiags) {
-      const parsed = JSON.parse(storedDiags);
-      setAnsweredIds(parsed.map((d: UserDiagnostic) => d.quiz_id));
+      try {
+        const parsed = JSON.parse(storedDiags);
+        ids = parsed.map((d: UserDiagnostic) => d.quiz_id);
+      } catch {
+        ids = INITIAL_DIAGNOSTICS.map((d) => d.quiz_id);
+      }
     } else {
-      setAnsweredIds(INITIAL_DIAGNOSTICS.map(d => d.quiz_id));
+      ids = INITIAL_DIAGNOSTICS.map((d) => d.quiz_id);
     }
+
+    if (tempResult && !ids.includes('quiz-temperamento')) {
+      ids.push('quiz-temperamento');
+    }
+
+    setAnsweredIds(ids);
   }, [user]);
 
   const filteredQuizzes = quizzes.filter((q) => {
@@ -64,7 +77,7 @@ export default function QuizzesListPage() {
               filter === 'pendentes' ? 'bg-white text-brand-700 font-bold shadow-xs' : 'text-warm-700 hover:text-brand-600'
             }`}
           >
-            Pendentes ({quizzes.length - answeredIds.length})
+            Pendentes ({Math.max(0, quizzes.length - answeredIds.length)})
           </button>
           <button
             onClick={() => setFilter('respondidos')}
@@ -81,16 +94,29 @@ export default function QuizzesListPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredQuizzes.map((quiz) => {
           const isCompleted = answeredIds.includes(quiz.id);
+          const isTemperamento = quiz.id === 'quiz-temperamento';
+
           return (
             <div
               key={quiz.id}
-              className="bg-white rounded-3xl p-6 border border-brand-100 shadow-card hover:shadow-soft-hover transition-all flex flex-col justify-between"
+              className={`bg-white rounded-3xl p-6 border shadow-card hover:shadow-soft-hover transition-all flex flex-col justify-between ${
+                isTemperamento
+                  ? 'border-brand-300 ring-1 ring-brand-200/60 bg-gradient-to-br from-white via-rose-50/20 to-white'
+                  : 'border-brand-100'
+              }`}
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
-                    {quiz.categoria}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
+                      {quiz.categoria}
+                    </span>
+                    {isTemperamento && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                        ⚡ Destaque
+                      </span>
+                    )}
+                  </div>
 
                   {isCompleted ? (
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
@@ -114,22 +140,42 @@ export default function QuizzesListPage() {
                 </p>
               </div>
 
-              <div className="pt-4 border-t border-warm-100 flex items-center justify-between">
-                <span className="text-xs text-warm-700 font-medium">
-                  {quiz.questions?.length || 4} perguntas
+              <div className="pt-4 border-t border-warm-100 flex items-center justify-between gap-2">
+                <span className="text-xs text-warm-700 font-medium shrink-0">
+                  {quiz.questions?.length || (isTemperamento ? 23 : 4)} perguntas
                 </span>
 
-                <Link
-                  href={`/quizzes/${quiz.id}`}
-                  className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                    isCompleted
-                      ? 'bg-warm-100 text-warm-900 hover:bg-warm-200'
-                      : 'brand-gradient text-white shadow-md hover:opacity-95'
-                  }`}
-                >
-                  <span>{isCompleted ? 'Refazer / Ver Diagnóstico' : 'Responder Quiz'}</span>
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
+                <div className="flex items-center gap-2">
+                  {isTemperamento && isCompleted ? (
+                    <>
+                      <Link
+                        href="/quizzes/temperamento/relatorio"
+                        className="px-3.5 py-2 rounded-xl text-xs font-bold brand-gradient text-white shadow-md hover:opacity-95 transition-all flex items-center gap-1.5"
+                      >
+                        <span>Ver Relatório</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                      <Link
+                        href="/quizzes/temperamento"
+                        className="px-3 py-2 rounded-xl text-xs font-medium bg-warm-100 text-warm-800 hover:bg-warm-200 transition-all"
+                      >
+                        Refazer
+                      </Link>
+                    </>
+                  ) : (
+                    <Link
+                      href={isTemperamento ? '/quizzes/temperamento' : `/quizzes/${quiz.id}`}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                        isCompleted
+                          ? 'bg-warm-100 text-warm-900 hover:bg-warm-200'
+                          : 'brand-gradient text-white shadow-md hover:opacity-95'
+                      }`}
+                    >
+                      <span>{isCompleted ? 'Refazer / Ver Diagnóstico' : 'Responder Quiz'}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  )}
+                </div>
               </div>
             </div>
           );
