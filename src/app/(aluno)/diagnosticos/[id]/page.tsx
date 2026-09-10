@@ -103,6 +103,32 @@ export default function DiagnosticResultPage() {
           </div>
         </div>
 
+        {/* Banner de Acesso ao Relatório Completo de Temperamento */}
+        {(diagnostic.quiz_id === 'quiz-temperamento' ||
+          diagId.startsWith('diag-temp-') ||
+          diagnostic.titulo_resultado?.toLowerCase().includes('temperamento')) && (
+          <div className="p-5 rounded-2xl bg-gradient-to-r from-brand-500 to-rose-600 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+            <div className="space-y-1">
+              <span className="text-[10px] uppercase font-bold tracking-wider bg-white/20 px-2 py-0.5 rounded-full">
+                Laudo Completo Disponível
+              </span>
+              <h3 className="text-sm font-bold font-heading">
+                Acesse o Laudo Psicológico Completo de Temperamento
+              </h3>
+              <p className="text-xs text-white/90">
+                Plano prático de ~5 meses, virtudes essenciais, dinâmica do casal e guia de convivência.
+              </p>
+            </div>
+            <Link
+              href="/quizzes/temperamento/relatorio"
+              className="px-4 py-2.5 rounded-xl bg-white text-brand-700 text-xs font-bold shadow-xs hover:bg-rose-50 transition-all inline-flex items-center gap-1.5 shrink-0"
+            >
+              <span>Ver Relatório Completo</span>
+              <Sparkles className="w-3.5 h-3.5 text-brand-600" />
+            </Link>
+          </div>
+        )}
+
         {/* Texto Clínico do Diagnóstico */}
         <div className="space-y-4 text-warm-900 leading-relaxed text-sm">
           <div className="prose prose-pink max-w-none">

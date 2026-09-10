@@ -16,6 +16,8 @@ import {
   BarChart3,
   Brain,
   RefreshCw,
+  FileText,
+  ArrowRight,
 } from 'lucide-react';
 
 // ========================================================
@@ -308,6 +310,33 @@ export default function TemperamentoResultadoPage() {
             <span>Resultado individual e restrito</span>
           </div>
         </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* CTA PRINCIPAL — ACESSAR RELATÓRIO COMPLETO */}
+      {/* ============================================================ */}
+      <div className="bg-gradient-to-r from-brand-600 via-brand-500 to-rose-600 rounded-3xl p-6 sm:p-8 text-white shadow-soft relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="space-y-1.5 text-center sm:text-left relative z-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-white text-[11px] font-bold uppercase tracking-wider backdrop-blur-xs">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Laudo Psicológico Exclusivo</span>
+          </div>
+          <h3 className="text-xl sm:text-2xl font-bold font-heading">
+            Acesse seu Relatório Completo ({primMeta.label})
+          </h3>
+          <p className="text-xs text-white/90 max-w-xl">
+            Análise aprofundada em 4 partes: traços e desafios, 3 virtudes com 12 atividades práticas (~5 meses), dinâmica conjugal e plano de ação.
+          </p>
+        </div>
+
+        <Link
+          href="/quizzes/temperamento/relatorio"
+          className="px-6 py-3.5 rounded-2xl bg-white text-brand-700 text-sm font-bold shadow-lg hover:bg-rose-50 hover:scale-105 active:scale-95 transition-all inline-flex items-center gap-2 shrink-0 relative z-10"
+        >
+          <FileText className="w-4 h-4 text-brand-600" />
+          <span>Acessar Relatório Completo</span>
+          <ArrowRight className="w-4 h-4" />
+        </Link>
       </div>
 
       {/* ============================================================ */}

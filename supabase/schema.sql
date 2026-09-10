@@ -281,6 +281,53 @@ CREATE POLICY "Leitura de resultados temperamento proprios" ON public.quiz_tempe
 CREATE POLICY "Insercao de resultados temperamento proprios" ON public.quiz_temperamento_results
   FOR INSERT WITH CHECK (auth.uid() = user_id AND public.is_ativo());
 
+-- 11. TABELA DE RELATÓRIOS COMPLETOS DE TEMPERAMENTO (temperament_reports)
+CREATE TABLE IF NOT EXISTS public.temperament_reports (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  temperamento TEXT UNIQUE NOT NULL CHECK (temperamento IN ('colerico', 'sanguineo', 'melancolico', 'fleumatico')),
+  tagline TEXT NOT NULL,
+  parte1_essencia JSONB NOT NULL DEFAULT '{}'::jsonb,
+  parte1_como_processa JSONB NOT NULL DEFAULT '{}'::jsonb,
+  parte1_pontos_fortes JSONB NOT NULL DEFAULT '[]'::jsonb,
+  parte1_desafios JSONB NOT NULL DEFAULT '[]'::jsonb,
+  parte2_virtudes JSONB NOT NULL DEFAULT '[]'::jsonb,
+  parte2_plano JSONB NOT NULL DEFAULT '[]'::jsonb,
+  parte3_relacionamento JSONB NOT NULL DEFAULT '{}'::jsonb,
+  parte3_padroes_conflito JSONB NOT NULL DEFAULT '[]'::jsonb,
+  parte3_parceiro_saber JSONB NOT NULL DEFAULT '[]'::jsonb,
+  parte3_acoes JSONB NOT NULL DEFAULT '[]'::jsonb,
+  parte3_compatibilidade JSONB NOT NULL DEFAULT '[]'::jsonb,
+  parte4_proximos_passos JSONB NOT NULL DEFAULT '{}'::jsonb,
+  parte4_mensagem_final TEXT NOT NULL,
+  parte4_recursos JSONB NOT NULL DEFAULT '{}'::jsonb,
+  atualizado_em TIMESTAMPTZ DEFAULT now()
+);
+
+-- 12. TABELA DE CONFIGURAÇÕES DA PLATAFORMA / MENTOR (platform_settings)
+CREATE TABLE IF NOT EXISTS public.platform_settings (
+  chave TEXT PRIMARY KEY,
+  valor JSONB NOT NULL,
+  descricao TEXT,
+  atualizado_em TIMESTAMPTZ DEFAULT now()
+);
+
+-- RLS PARA RELATÓRIOS E CONFIGURAÇÕES
+ALTER TABLE public.temperament_reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.platform_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Leitura pública/autenticada de relatórios" ON public.temperament_reports
+  FOR SELECT USING (true);
+
+CREATE POLICY "Admin gerencia relatórios de temperamento" ON public.temperament_reports
+  FOR ALL USING (public.is_admin());
+
+CREATE POLICY "Leitura de configurações da plataforma" ON public.platform_settings
+  FOR SELECT USING (true);
+
+CREATE POLICY "Admin gerencia configurações da plataforma" ON public.platform_settings
+  FOR ALL USING (public.is_admin());
+
+
 -- ========================================================
 -- BUCKET DE STORAGE SUPABASE (PDFs e Materiais)
 -- ========================================================
