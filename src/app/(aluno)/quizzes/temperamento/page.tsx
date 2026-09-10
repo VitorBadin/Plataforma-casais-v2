@@ -45,18 +45,15 @@ export default function TemperamentoQuizPage() {
 
   // Track which block we're transitioning into
   const [showBlocoIntro, setShowBlocoIntro] = useState(false);
-  const [prevBloco, setPrevBloco] = useState<number | null>(null);
+  const [prevBloco, setPrevBloco] = useState<number>(1);
 
-  useEffect(() => {
-    if (!started) return;
-    const blocoAtual = currentPergunta?.bloco;
-    if (blocoAtual && blocoAtual !== prevBloco) {
-      setShowBlocoIntro(true);
-      setPrevBloco(blocoAtual);
-      const timer = setTimeout(() => setShowBlocoIntro(false), 2200);
-      return () => clearTimeout(timer);
-    }
-  }, [currentIndex, started, currentPergunta, prevBloco]);
+  // Inicia o quiz direto na pergunta 1 sem travar em timer
+  const handleStartQuiz = () => {
+    setStarted(true);
+    setCurrentIndex(0);
+    setPrevBloco(1);
+    setShowBlocoIntro(false);
+  };
 
   const handleAnswer = useCallback((questionNumber: number, value: string) => {
     setAnswers((prev) => ({ ...prev, [questionNumber]: value }));
@@ -64,8 +61,17 @@ export default function TemperamentoQuizPage() {
 
   const handleNext = () => {
     if (currentIndex < TOTAL_PERGUNTAS - 1) {
+      const nextIndex = currentIndex + 1;
+      const nextPergunta = TEMPERAMENTO_PERGUNTAS[nextIndex];
+      const currentBlocoId = currentPergunta?.bloco;
+
+      // Se mudou de bloco (ex: de bloco 1 para bloco 2, ou de 2 para 3), mostra a transição com botão
+      if (nextPergunta && nextPergunta.bloco !== currentBlocoId) {
+        setPrevBloco(nextPergunta.bloco);
+        setShowBlocoIntro(true);
+      }
       setDirection('next');
-      setCurrentIndex((prev) => prev + 1);
+      setCurrentIndex(nextIndex);
     } else {
       handleSubmit();
     }
@@ -75,6 +81,7 @@ export default function TemperamentoQuizPage() {
     if (currentIndex > 0) {
       setDirection('prev');
       setCurrentIndex((prev) => prev - 1);
+      setShowBlocoIntro(false);
     }
   };
 
@@ -209,8 +216,8 @@ export default function TemperamentoQuizPage() {
             {/* CTA */}
             <div className="text-center pt-2">
               <button
-                onClick={() => setStarted(true)}
-                className="px-8 py-3.5 rounded-2xl brand-gradient text-white text-sm font-bold shadow-md hover:opacity-95 transition-all inline-flex items-center gap-2.5 hover:shadow-soft-hover"
+                onClick={handleStartQuiz}
+                className="px-8 py-3.5 rounded-2xl brand-gradient text-white text-sm font-bold shadow-md hover:opacity-95 transition-all inline-flex items-center gap-2.5 hover:shadow-soft-hover cursor-pointer"
               >
                 <Sparkles className="w-5 h-5" />
                 Iniciar Teste de Temperamento
@@ -226,21 +233,48 @@ export default function TemperamentoQuizPage() {
   }
 
   // ============================================================
-  // TELA DE TRANSIÇÃO DE BLOCO
+  // TELA DE TRANSIÇÃO DE BLOCO (com botão de ação imediata)
   // ============================================================
   if (showBlocoIntro && currentBloco) {
     return (
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-3xl p-10 border border-brand-100 shadow-soft text-center space-y-4 animate-fade-in">
-          <span className="text-5xl block">{currentBloco.emoji}</span>
-          <h2 className="text-xl font-bold text-warm-900 font-heading">
-            Bloco {currentBloco.id}: {currentBloco.titulo}
-          </h2>
-          <p className="text-sm text-warm-700 max-w-sm mx-auto">
-            {currentBloco.instrucao}
-          </p>
-          <div className="text-xs text-warm-700 pt-2">
-            {currentBloco.perguntas.length} pergunta{currentBloco.perguntas.length > 1 ? 's' : ''}
+      <div className="max-w-2xl mx-auto space-y-6">
+        <Link
+          href="/quizzes"
+          className="inline-flex items-center gap-1.5 text-xs text-warm-700 hover:text-brand-600 font-semibold"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Voltar para Quizzes
+        </Link>
+
+        <div className="bg-white rounded-3xl p-8 sm:p-10 border border-brand-100 shadow-soft text-center space-y-6 animate-fade-in">
+          <div className="w-16 h-16 rounded-2xl bg-rose-soft border border-brand-200 flex items-center justify-center text-3xl mx-auto">
+            {currentBloco.emoji}
+          </div>
+
+          <div className="space-y-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-600 bg-brand-50 border border-brand-200 px-3 py-1 rounded-full">
+              Novo Bloco de Perguntas
+            </span>
+            <h2 className="text-2xl font-bold text-warm-900 font-heading pt-2">
+              Bloco {currentBloco.id}: {currentBloco.titulo}
+            </h2>
+            <p className="text-sm text-warm-700 max-w-md mx-auto leading-relaxed">
+              {currentBloco.instrucao}
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-rose-soft/60 border border-brand-100 text-xs text-warm-800 font-medium max-w-sm mx-auto">
+            📋 Este bloco contém {currentBloco.perguntas.length} perguntas (perguntas {currentBloco.perguntas[0]?.number} a {currentBloco.perguntas[currentBloco.perguntas.length - 1]?.number}).
+          </div>
+
+          <div className="pt-2">
+            <button
+              onClick={() => setShowBlocoIntro(false)}
+              className="px-8 py-3.5 rounded-2xl brand-gradient text-white text-sm font-bold shadow-md hover:opacity-95 transition-all inline-flex items-center gap-2 cursor-pointer"
+            >
+              <span>Continuar para Pergunta {currentIndex + 1}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>
