@@ -170,7 +170,7 @@ export default function TemperamentoResultadoPage() {
                   {resultado.intensidade_primario}
                 </span>
               </div>
-              <p className="text-xs text-warm-700 leading-relaxed">
+              <p className="text-sm text-warm-700 leading-relaxed">
                 {primMeta.descricaoCurta}
               </p>
             </div>
@@ -194,11 +194,11 @@ export default function TemperamentoResultadoPage() {
                 <span className={`text-lg font-bold font-heading ${secMeta.textColor}`}>
                   {resultado.pontuacoes[resultado.temperamento_secundario]} pts
                 </span>
-                <span className="text-[11px] text-warm-700 font-medium bg-warm-50 border border-warm-200/50 px-2.5 py-0.5 rounded-full">
+                <span className="text-xs text-warm-700 font-medium bg-warm-50 border border-warm-200/50 px-2.5 py-0.5 rounded-full">
                   {resultado.intensidade_secundario}
                 </span>
               </div>
-              <p className="text-xs text-warm-700 leading-relaxed">
+              <p className="text-sm text-warm-700 leading-relaxed">
                 {secMeta.descricaoCurta}
               </p>
             </div>

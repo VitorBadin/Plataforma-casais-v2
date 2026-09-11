@@ -161,11 +161,11 @@ export default function TemperamentoRelatorioCompletoPage() {
         {/* Informações Personalizadas do Usuário */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 p-4 rounded-2xl bg-warm-50/70 border border-warm-200/80">
           <div>
-            <span className="text-[11px] text-warm-700 uppercase font-semibold block">Nome</span>
+            <span className="text-xs text-warm-700 uppercase font-semibold block">Nome</span>
             <p className="text-sm font-bold text-warm-900 font-heading">{userName}</p>
           </div>
           <div>
-            <span className="text-[11px] text-warm-700 uppercase font-semibold block">
+            <span className="text-xs text-warm-700 uppercase font-semibold block">
               Temperamento Primário
             </span>
             <p className="text-sm font-bold text-brand-700 flex items-center gap-1.5 font-heading">
@@ -174,13 +174,13 @@ export default function TemperamentoRelatorioCompletoPage() {
             </p>
           </div>
           <div>
-            <span className="text-[11px] text-warm-700 uppercase font-semibold block">
+            <span className="text-xs text-warm-700 uppercase font-semibold block">
               Intensidade Mapeada
             </span>
             <p className="text-sm font-bold text-warm-900 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
               <span>{intensidadeLaudo}</span>
-              <span className="text-xs text-warm-700 font-normal">({primaryScore} pts)</span>
+              <span className="text-sm text-warm-700 font-normal">({primaryScore} pts)</span>
             </p>
           </div>
         </div>
@@ -233,7 +233,7 @@ export default function TemperamentoRelatorioCompletoPage() {
             1
           </div>
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-brand-600">
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-600">
               Parte 1 de 4
             </span>
             <h2 className="text-xl sm:text-2xl font-bold text-warm-900 font-heading">
@@ -271,9 +271,9 @@ export default function TemperamentoRelatorioCompletoPage() {
                 <h4 className="text-xs font-bold text-brand-700 uppercase tracking-wider">
                   {bloco.titulo}
                 </h4>
-                <ul className="space-y-1.5">
+                <ul className="space-y-2">
                   {bloco.itens.map((item, idx) => (
-                    <li key={idx} className="text-xs text-warm-700 flex items-start gap-2">
+                    <li key={idx} className="text-sm text-warm-700 flex items-start gap-2 leading-relaxed">
                       <span className="text-brand-500 font-bold">•</span>
                       <span>{item}</span>
                     </li>
@@ -297,19 +297,19 @@ export default function TemperamentoRelatorioCompletoPage() {
             {report.parte1.pontosFortes.map((forte, idx) => (
               <div
                 key={idx}
-                className="p-4 rounded-2xl bg-emerald-50/40 border border-emerald-100 space-y-1.5"
+                className="p-4 rounded-2xl bg-emerald-50/40 border border-emerald-100 space-y-2"
               >
                 <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-[11px] font-bold flex items-center justify-center">
+                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">
                     {idx + 1}
                   </span>
                   <h4 className="text-sm font-bold text-emerald-950 font-heading">
                     {forte.titulo}
                   </h4>
                 </div>
-                <p className="text-xs text-warm-700 leading-relaxed pl-7">{forte.descricao}</p>
-                <div className="pl-7 pt-1">
-                  <span className="text-[11px] font-semibold text-emerald-900 bg-emerald-100/60 px-2 py-0.5 rounded-md">
+                <p className="text-sm text-warm-700 leading-relaxed pl-7">{forte.descricao}</p>
+                <div className="pl-7 pt-0.5">
+                  <span className="text-xs sm:text-sm font-medium text-emerald-900 bg-emerald-100/60 px-2.5 py-1 rounded-md inline-block">
                     ✨ Onde brilha: {forte.ondeBrilha}
                   </span>
                 </div>
@@ -326,7 +326,7 @@ export default function TemperamentoRelatorioCompletoPage() {
               Seus 5 Principais Desafios
             </h3>
           </div>
-          <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-amber-900">
+          <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl text-sm text-amber-900 leading-relaxed">
             <strong>Importante:</strong> Estes NÃO são defeitos. São desequilíbrios naturais do seu
             temperamento que, sem autoconsciência, podem desgastar relacionamentos e oportunidades.
           </div>
@@ -338,19 +338,19 @@ export default function TemperamentoRelatorioCompletoPage() {
                 className="p-4 rounded-2xl bg-amber-50/30 border border-amber-200/70 space-y-2"
               >
                 <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-amber-600 text-white text-[11px] font-bold flex items-center justify-center">
+                  <span className="w-5 h-5 rounded-full bg-amber-600 text-white text-xs font-bold flex items-center justify-center">
                     {idx + 1}
                   </span>
                   <h4 className="text-sm font-bold text-amber-950 font-heading">
                     {desafio.titulo}
                   </h4>
                 </div>
-                <p className="text-xs text-warm-700 leading-relaxed pl-7">{desafio.descricao}</p>
-                <div className="pl-7 space-y-1 text-[11px]">
+                <p className="text-sm text-warm-700 leading-relaxed pl-7">{desafio.descricao}</p>
+                <div className="pl-7 space-y-1.5 text-sm">
                   <p className="text-rose-900">
                     <strong>⚠️ Onde prejudica:</strong> {desafio.ondePrejudica}
                   </p>
-                  <p className="text-amber-900 bg-amber-100/60 p-1.5 rounded-md">
+                  <p className="text-amber-900 bg-amber-100/60 p-2 rounded-md">
                     <strong>🚨 Sinal de alerta:</strong> {desafio.sinalAlerta}
                   </p>
                 </div>
@@ -373,7 +373,7 @@ export default function TemperamentoRelatorioCompletoPage() {
             2
           </div>
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-brand-600">
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-600">
               Parte 2 de 4
             </span>
             <h2 className="text-xl sm:text-2xl font-bold text-warm-900 font-heading">
@@ -398,7 +398,7 @@ export default function TemperamentoRelatorioCompletoPage() {
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">{virtude.emoji}</span>
                   <div>
-                    <span className="text-[11px] font-bold text-brand-600 uppercase tracking-wider">
+                    <span className="text-xs font-bold text-brand-600 uppercase tracking-wider">
                       Virtude {virtude.numero}
                     </span>
                     <h4 className="text-lg font-bold text-warm-900 font-heading">
@@ -407,7 +407,7 @@ export default function TemperamentoRelatorioCompletoPage() {
                   </div>
                 </div>
 
-                <div className="p-3.5 bg-white rounded-2xl border border-brand-100 text-xs text-warm-800 leading-relaxed">
+                <div className="p-3.5 bg-white rounded-2xl border border-brand-100 text-sm text-warm-800 leading-relaxed">
                   <strong>Por que é essencial:</strong> {virtude.porQueEssencial}
                 </div>
 
@@ -417,9 +417,9 @@ export default function TemperamentoRelatorioCompletoPage() {
                     <span className="text-xs font-bold text-brand-700 uppercase tracking-wider block">
                       O que significa:
                     </span>
-                    <ul className="space-y-1 text-xs text-warm-700">
+                    <ul className="space-y-1.5 text-sm text-warm-700">
                       {virtude.oQueSignifica.map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-1.5">
+                        <li key={idx} className="flex items-start gap-1.5 leading-relaxed">
                           <span className="text-brand-500">•</span>
                           <span>{item}</span>
                         </li>
@@ -432,9 +432,9 @@ export default function TemperamentoRelatorioCompletoPage() {
                     <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider block">
                       Como saber que está desenvolvendo:
                     </span>
-                    <ul className="space-y-1 text-xs text-warm-700">
+                    <ul className="space-y-1.5 text-sm text-warm-700">
                       {virtude.comoSaber.map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-1.5">
+                        <li key={idx} className="flex items-start gap-1.5 leading-relaxed">
                           <span className="text-emerald-600 font-bold">✓</span>
                           <span>{item}</span>
                         </li>
@@ -466,7 +466,7 @@ export default function TemperamentoRelatorioCompletoPage() {
                   <span className="px-3 py-1 rounded-full bg-brand-600 text-white text-xs font-bold">
                     MÊS {blocoMes.mesNumero}
                   </span>
-                  <h4 className="text-sm font-bold text-warm-900 font-heading">
+                  <h4 className="text-base font-bold text-warm-900 font-heading">
                     {blocoMes.tituloMes}
                   </h4>
                 </div>
@@ -478,18 +478,18 @@ export default function TemperamentoRelatorioCompletoPage() {
                       className="p-4 bg-white rounded-2xl border border-warm-200/80 shadow-xs space-y-2"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-brand-600">
+                        <span className="text-xs font-bold text-brand-600">
                           {ativ.periodo}
                         </span>
                         {ativ.duracaoOuFrequencia && (
-                          <span className="text-[10px] bg-rose-soft text-brand-800 px-2 py-0.5 rounded-full font-medium">
+                          <span className="text-xs bg-rose-soft text-brand-800 px-2 py-0.5 rounded-full font-medium">
                             ⏱️ {ativ.duracaoOuFrequencia}
                           </span>
                         )}
                       </div>
-                      <h5 className="text-xs font-bold text-warm-900">{ativ.titulo}</h5>
-                      <p className="text-xs text-warm-700 leading-relaxed">{ativ.descricao}</p>
-                      <div className="pt-1 text-[11px] text-emerald-800 font-medium">
+                      <h5 className="text-sm font-bold text-warm-900 font-heading">{ativ.titulo}</h5>
+                      <p className="text-sm text-warm-700 leading-relaxed">{ativ.descricao}</p>
+                      <div className="pt-1 text-sm text-emerald-800 font-medium">
                         🎯 <strong>Meta:</strong> {ativ.meta}
                       </div>
                     </div>
@@ -514,7 +514,7 @@ export default function TemperamentoRelatorioCompletoPage() {
             3
           </div>
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-brand-600">
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-600">
               Parte 3 de 4
             </span>
             <h2 className="text-xl sm:text-2xl font-bold text-warm-900 font-heading">
@@ -529,7 +529,7 @@ export default function TemperamentoRelatorioCompletoPage() {
             <Heart className="w-5 h-5 text-brand-600" />
             {report.parte3.formaDeAmar.titulo}
           </h3>
-          <p className="text-xs text-warm-800 font-medium leading-relaxed">
+          <p className="text-sm text-warm-800 font-medium leading-relaxed">
             {report.parte3.formaDeAmar.descricao}
           </p>
 
@@ -537,7 +537,7 @@ export default function TemperamentoRelatorioCompletoPage() {
             {report.parte3.formaDeAmar.ladoLuminoso.map((item, idx) => (
               <div
                 key={idx}
-                className="p-3 bg-white rounded-xl border border-brand-100 text-xs text-warm-800 flex items-start gap-2"
+                className="p-3.5 bg-white rounded-xl border border-brand-100 text-sm text-warm-800 flex items-start gap-2 leading-relaxed"
               >
                 <span className="text-emerald-600 font-bold">✅</span>
                 <span>{item}</span>
@@ -545,7 +545,7 @@ export default function TemperamentoRelatorioCompletoPage() {
             ))}
           </div>
 
-          <div className="p-4 bg-white/90 rounded-2xl border border-rose-200 text-xs text-rose-950 leading-relaxed">
+          <div className="p-4 bg-white/90 rounded-2xl border border-rose-200 text-sm text-rose-950 leading-relaxed">
             <strong>❌ O lado difícil:</strong> {report.parte3.formaDeAmar.ladoDificil}
           </div>
         </div>
@@ -566,13 +566,13 @@ export default function TemperamentoRelatorioCompletoPage() {
                 className="p-4 rounded-2xl bg-white border border-warm-200 shadow-xs space-y-2"
               >
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 font-bold text-xs">
+                  <span className="px-2.5 py-0.5 rounded-md bg-rose-100 text-rose-800 font-bold text-xs">
                     Padrão {conflito.numero}
                   </span>
-                  <h4 className="text-xs font-bold text-warm-900">{conflito.titulo}</h4>
+                  <h4 className="text-sm font-bold text-warm-900 font-heading">{conflito.titulo}</h4>
                 </div>
-                <p className="text-xs text-warm-700 leading-relaxed">{conflito.descricao}</p>
-                <div className="p-2.5 rounded-xl bg-warm-50 border border-warm-200 text-[11px] text-warm-800 italic">
+                <p className="text-sm text-warm-700 leading-relaxed">{conflito.descricao}</p>
+                <div className="p-3 rounded-xl bg-warm-50 border border-warm-200 text-sm text-warm-800 italic leading-relaxed">
                   <strong>Exemplo prático:</strong> {conflito.exemplo}
                 </div>
               </div>
@@ -589,7 +589,7 @@ export default function TemperamentoRelatorioCompletoPage() {
                 O Que Seu Parceiro Precisa Saber Sobre Você 🛑
               </h3>
             </div>
-            <span className="text-[11px] font-semibold text-brand-600 bg-rose-soft px-2.5 py-1 rounded-full">
+            <span className="text-xs font-semibold text-brand-600 bg-rose-soft px-3 py-1 rounded-full">
               Leiam Juntos
             </span>
           </div>
@@ -600,9 +600,9 @@ export default function TemperamentoRelatorioCompletoPage() {
                 key={idx}
                 className="p-4 rounded-2xl bg-rose-soft/30 border border-brand-100 space-y-2"
               >
-                <h4 className="text-xs font-bold text-brand-900">💡 {item.topico}</h4>
-                <p className="text-xs text-warm-700">{item.explicacao}</p>
-                <div className="p-3 bg-white rounded-xl border border-brand-200 text-xs text-brand-900 font-medium">
+                <h4 className="text-sm font-bold text-brand-900 font-heading">💡 {item.topico}</h4>
+                <p className="text-sm text-warm-700 leading-relaxed">{item.explicacao}</p>
+                <div className="p-3 bg-white rounded-xl border border-brand-200 text-sm text-brand-900 font-medium leading-relaxed">
                   <strong>O que ele(a) precisa saber:</strong> &ldquo;{item.fraseParaOParceiro}
                   &rdquo;
                 </div>
@@ -625,12 +625,12 @@ export default function TemperamentoRelatorioCompletoPage() {
                 className="p-4 rounded-2xl bg-white border border-warm-200 shadow-xs space-y-1.5"
               >
                 <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-brand-500 text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+                  <span className="w-5 h-5 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center shrink-0">
                     {acao.numero}
                   </span>
-                  <h4 className="text-xs font-bold text-warm-900">{acao.titulo}</h4>
+                  <h4 className="text-sm font-bold text-warm-900 font-heading">{acao.titulo}</h4>
                 </div>
-                <p className="text-xs text-warm-700 leading-relaxed pl-7">{acao.descricao}</p>
+                <p className="text-sm text-warm-700 leading-relaxed pl-7">{acao.descricao}</p>
               </div>
             ))}
           </div>
@@ -651,15 +651,15 @@ export default function TemperamentoRelatorioCompletoPage() {
                 key={idx}
                 className="p-4 rounded-2xl bg-white border border-brand-100 shadow-xs space-y-2.5"
               >
-                <h4 className="text-xs font-bold text-brand-700 font-heading">{comp.titulo}</h4>
-                <div className="space-y-1.5 text-xs">
+                <h4 className="text-sm font-bold text-brand-700 font-heading">{comp.titulo}</h4>
+                <div className="space-y-2 text-sm leading-relaxed">
                   <p className="text-emerald-900">
                     <strong>✅ Pontos fortes:</strong> {comp.pontosPositivos}
                   </p>
                   <p className="text-rose-900">
                     <strong>❌ Desafios:</strong> {comp.pontosAtencao}
                   </p>
-                  <p className="text-warm-800 bg-rose-soft/60 p-2 rounded-xl text-[11px]">
+                  <p className="text-warm-800 bg-rose-soft/60 p-2.5 rounded-xl text-sm">
                     <strong>💡 Dica de convivência:</strong> {comp.dica}
                   </p>
                 </div>
@@ -682,7 +682,7 @@ export default function TemperamentoRelatorioCompletoPage() {
             4
           </div>
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-brand-600">
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-600">
               Parte 4 de 4
             </span>
             <h2 className="text-xl sm:text-2xl font-bold text-warm-900 font-heading">
@@ -700,7 +700,7 @@ export default function TemperamentoRelatorioCompletoPage() {
             </span>
             <ul className="space-y-2">
               {report.parte4.proximosPassos.duasSemanas.map((passo, idx) => (
-                <li key={idx} className="text-xs text-warm-800 flex items-start gap-2">
+                <li key={idx} className="text-sm text-warm-800 flex items-start gap-2 leading-relaxed">
                   <span className="w-4 h-4 rounded-full bg-brand-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                     {idx + 1}
                   </span>
@@ -717,7 +717,7 @@ export default function TemperamentoRelatorioCompletoPage() {
             </span>
             <ul className="space-y-2">
               {report.parte4.proximosPassos.quatroSemanas.map((passo, idx) => (
-                <li key={idx} className="text-xs text-warm-800 flex items-start gap-2">
+                <li key={idx} className="text-sm text-warm-800 flex items-start gap-2 leading-relaxed">
                   <span className="w-4 h-4 rounded-full bg-warm-700 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                     {idx + 1}
                   </span>
@@ -737,7 +737,7 @@ export default function TemperamentoRelatorioCompletoPage() {
             </h3>
           </div>
 
-          <blockquote className="text-xs sm:text-sm text-warm-900 leading-relaxed italic border-l-2 border-brand-400 pl-4 py-1">
+          <blockquote className="text-sm sm:text-base text-warm-900 leading-relaxed italic border-l-2 border-brand-400 pl-4 py-1.5">
             &ldquo;{report.parte4.mensagemFinal}&rdquo;
           </blockquote>
 
@@ -753,14 +753,14 @@ export default function TemperamentoRelatorioCompletoPage() {
               </div>
               <div>
                 <p className="text-xs font-bold text-warm-900">{mentor.nome}</p>
-                <p className="text-[11px] text-warm-700">{mentor.titulo}</p>
+                <p className="text-xs text-warm-700">{mentor.titulo}</p>
                 {mentor.registro && (
-                  <p className="text-[10px] text-warm-700 font-medium">{mentor.registro}</p>
+                  <p className="text-[11px] text-warm-700 font-medium">{mentor.registro}</p>
                 )}
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 text-[11px] text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200 shrink-0">
+            <div className="flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200 shrink-0">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
               <span>Mentoria Individual Validada</span>
             </div>
@@ -780,11 +780,11 @@ export default function TemperamentoRelatorioCompletoPage() {
               <span className="text-xs font-bold text-brand-700 uppercase tracking-wider block">
                 📚 Livros Recomendados
               </span>
-              <ul className="space-y-2 text-xs text-warm-800">
+              <ul className="space-y-2 text-sm text-warm-800">
                 {report.parte4.recursos.livrosRecomendados.map((livro, idx) => (
-                  <li key={idx}>
+                  <li key={idx} className="leading-relaxed">
                     <p className="font-semibold">&ldquo;{livro.titulo}&rdquo;</p>
-                    <p className="text-[11px] text-warm-700">{livro.autor}</p>
+                    <p className="text-xs text-warm-700">{livro.autor}</p>
                   </li>
                 ))}
               </ul>
@@ -795,9 +795,9 @@ export default function TemperamentoRelatorioCompletoPage() {
               <span className="text-xs font-bold text-brand-700 uppercase tracking-wider block">
                 🧘 Exercícios Complementares
               </span>
-              <ul className="space-y-1.5 text-xs text-warm-700">
+              <ul className="space-y-1.5 text-sm text-warm-700">
                 {report.parte4.recursos.exerciciosComplementares.map((ex, idx) => (
-                  <li key={idx} className="flex items-start gap-1.5">
+                  <li key={idx} className="flex items-start gap-1.5 leading-relaxed">
                     <span className="text-brand-500">•</span>
                     <span>{ex}</span>
                   </li>
@@ -810,9 +810,9 @@ export default function TemperamentoRelatorioCompletoPage() {
               <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider block">
                 🌱 Sinais de Progresso
               </span>
-              <ul className="space-y-1.5 text-xs text-warm-700">
+              <ul className="space-y-1.5 text-sm text-warm-700">
                 {report.parte4.recursos.sinaisProgresso.map((sinal, idx) => (
-                  <li key={idx} className="flex items-start gap-1.5">
+                  <li key={idx} className="flex items-start gap-1.5 leading-relaxed">
                     <span className="text-emerald-600 font-bold">✓</span>
                     <span>{sinal}</span>
                   </li>
@@ -831,7 +831,7 @@ export default function TemperamentoRelatorioCompletoPage() {
           <h3 className="text-sm font-bold text-warm-900 font-heading">
             Deseja revisar seus outros diagnósticos?
           </h3>
-          <p className="text-xs text-warm-700">
+          <p className="text-sm text-warm-700">
             Acompanhe seu progresso e acesse a biblioteca completa da mentoria.
           </p>
         </div>
