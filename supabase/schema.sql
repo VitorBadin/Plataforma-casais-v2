@@ -329,8 +329,75 @@ CREATE POLICY "Admin gerencia configurações da plataforma" ON public.platform_
 
 
 -- ========================================================
+-- QUIZ "SEU IDIOMA DO AMOR" (Tabelas Especializadas)
+-- ========================================================
+
+-- 13. TABELA DE RESPOSTAS DO QUIZ IDIOMA DO AMOR (quiz_love_language_answers)
+CREATE TABLE IF NOT EXISTS public.quiz_love_language_answers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  question_number INT NOT NULL,
+  opcao_escolhida TEXT NOT NULL CHECK (opcao_escolhida IN ('A', 'B', 'C', 'D', 'E')),
+  idioma_atribuido TEXT NOT NULL CHECK (idioma_atribuido IN ('palavras', 'tempo', 'presentes', 'servico', 'toque')),
+  respondido_em TIMESTAMPTZ DEFAULT now()
+);
+
+-- 14. TABELA DE RESULTADOS DO QUIZ IDIOMA DO AMOR (quiz_love_language_results)
+CREATE TABLE IF NOT EXISTS public.quiz_love_language_results (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  palavras_pct INT NOT NULL DEFAULT 0,
+  tempo_pct INT NOT NULL DEFAULT 0,
+  presentes_pct INT NOT NULL DEFAULT 0,
+  servico_pct INT NOT NULL DEFAULT 0,
+  toque_pct INT NOT NULL DEFAULT 0,
+  idioma_primario TEXT NOT NULL CHECK (idioma_primario IN ('palavras', 'tempo', 'presentes', 'servico', 'toque')),
+  idioma_secundario TEXT NOT NULL CHECK (idioma_secundario IN ('palavras', 'tempo', 'presentes', 'servico', 'toque')),
+  calculado_em TIMESTAMPTZ DEFAULT now()
+);
+
+-- 15. TABELA DE RELATÓRIOS DO IDIOMA DO AMOR (love_language_reports)
+CREATE TABLE IF NOT EXISTS public.love_language_reports (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  idioma TEXT UNIQUE NOT NULL CHECK (idioma IN ('palavras', 'tempo', 'presentes', 'servico', 'toque')),
+  titulo TEXT NOT NULL,
+  tagline TEXT NOT NULL,
+  resumo TEXT,
+  secoes JSONB NOT NULL DEFAULT '[]'::jsonb,
+  atualizado_em TIMESTAMPTZ DEFAULT now()
+);
+
+-- INDEXES PARA QUIZ IDIOMA DO AMOR
+CREATE INDEX IF NOT EXISTS idx_love_answers_user ON public.quiz_love_language_answers(user_id);
+CREATE INDEX IF NOT EXISTS idx_love_results_user ON public.quiz_love_language_results(user_id);
+
+-- RLS PARA QUIZ IDIOMA DO AMOR
+ALTER TABLE public.quiz_love_language_answers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quiz_love_language_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.love_language_reports ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Leitura de respostas idioma amor proprias" ON public.quiz_love_language_answers
+  FOR SELECT USING (auth.uid() = user_id OR public.is_admin());
+
+CREATE POLICY "Insercao de respostas idioma amor proprias" ON public.quiz_love_language_answers
+  FOR INSERT WITH CHECK (auth.uid() = user_id AND public.is_ativo());
+
+CREATE POLICY "Leitura de resultados idioma amor proprios" ON public.quiz_love_language_results
+  FOR SELECT USING (auth.uid() = user_id OR public.is_admin());
+
+CREATE POLICY "Insercao de resultados idioma amor proprios" ON public.quiz_love_language_results
+  FOR INSERT WITH CHECK (auth.uid() = user_id AND public.is_ativo());
+
+CREATE POLICY "Leitura pública/autenticada de relatórios idioma do amor" ON public.love_language_reports
+  FOR SELECT USING (true);
+
+CREATE POLICY "Admin gerencia relatórios de idioma do amor" ON public.love_language_reports
+  FOR ALL USING (public.is_admin());
+
+-- ========================================================
 -- BUCKET DE STORAGE SUPABASE (PDFs e Materiais)
 -- ========================================================
 -- Executar no painel do Supabase Storage ou via SQL:
 -- INSERT INTO storage.buckets (id, name, public) VALUES ('materiais', 'materiais', true);
+
 

@@ -17,6 +17,7 @@ export default function QuizzesListPage() {
     setQuizzes(getStoredQuizzes());
     const storedDiags = localStorage.getItem(`psi_diagnostics_${user?.id}`);
     const tempResult = localStorage.getItem(`psi_temperamento_result_${user?.id}`);
+    const idiomaResult = localStorage.getItem(`psi_idioma_amor_result_${user?.id}`);
 
     let ids: string[] = [];
     if (storedDiags) {
@@ -32,6 +33,9 @@ export default function QuizzesListPage() {
 
     if (tempResult && !ids.includes('quiz-temperamento')) {
       ids.push('quiz-temperamento');
+    }
+    if (idiomaResult && !ids.includes('quiz-idioma-amor')) {
+      ids.push('quiz-idioma-amor');
     }
 
     setAnsweredIds(ids);
@@ -65,7 +69,7 @@ export default function QuizzesListPage() {
         <div className="flex items-center gap-1.5 bg-rose-soft p-1 rounded-2xl border border-brand-100 text-xs font-medium self-start sm:self-auto">
           <button
             onClick={() => setFilter('todos')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
+            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
               filter === 'todos' ? 'bg-white text-brand-700 font-bold shadow-xs' : 'text-warm-700 hover:text-brand-600'
             }`}
           >
@@ -73,7 +77,7 @@ export default function QuizzesListPage() {
           </button>
           <button
             onClick={() => setFilter('pendentes')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
+            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
               filter === 'pendentes' ? 'bg-white text-brand-700 font-bold shadow-xs' : 'text-warm-700 hover:text-brand-600'
             }`}
           >
@@ -81,7 +85,7 @@ export default function QuizzesListPage() {
           </button>
           <button
             onClick={() => setFilter('respondidos')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
+            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
               filter === 'respondidos' ? 'bg-white text-brand-700 font-bold shadow-xs' : 'text-warm-700 hover:text-brand-600'
             }`}
           >
@@ -95,12 +99,14 @@ export default function QuizzesListPage() {
         {filteredQuizzes.map((quiz) => {
           const isCompleted = answeredIds.includes(quiz.id);
           const isTemperamento = quiz.id === 'quiz-temperamento';
+          const isIdiomaAmor = quiz.id === 'quiz-idioma-amor';
+          const isSpecial = isTemperamento || isIdiomaAmor;
 
           return (
             <div
               key={quiz.id}
               className={`bg-white rounded-3xl p-6 border shadow-card hover:shadow-soft-hover transition-all flex flex-col justify-between ${
-                isTemperamento
+                isSpecial
                   ? 'border-brand-300 ring-1 ring-brand-200/60 bg-gradient-to-br from-white via-rose-50/20 to-white'
                   : 'border-brand-100'
               }`}
@@ -114,6 +120,11 @@ export default function QuizzesListPage() {
                     {isTemperamento && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
                         ⚡ Destaque
+                      </span>
+                    )}
+                    {isIdiomaAmor && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-100 text-pink-800 border border-pink-200">
+                        ❤️ Destaque
                       </span>
                     )}
                   </div>
@@ -142,7 +153,7 @@ export default function QuizzesListPage() {
 
               <div className="pt-4 border-t border-warm-100 flex items-center justify-between gap-2">
                 <span className="text-xs text-warm-700 font-medium shrink-0">
-                  {quiz.questions?.length || (isTemperamento ? 23 : 4)} perguntas
+                  {quiz.questions?.length || (isTemperamento ? 23 : isIdiomaAmor ? 20 : 4)} perguntas
                 </span>
 
                 <div className="flex items-center gap-2">
@@ -162,9 +173,31 @@ export default function QuizzesListPage() {
                         Refazer
                       </Link>
                     </>
+                  ) : isIdiomaAmor && isCompleted ? (
+                    <>
+                      <Link
+                        href="/quizzes/idioma-do-amor/relatorio"
+                        className="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-md hover:opacity-95 transition-all flex items-center gap-1.5"
+                      >
+                        <span>Ver Relatório</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                      <Link
+                        href="/quizzes/idioma-do-amor"
+                        className="px-3 py-2 rounded-xl text-xs font-medium bg-warm-100 text-warm-800 hover:bg-warm-200 transition-all"
+                      >
+                        Refazer
+                      </Link>
+                    </>
                   ) : (
                     <Link
-                      href={isTemperamento ? '/quizzes/temperamento' : `/quizzes/${quiz.id}`}
+                      href={
+                        isTemperamento
+                          ? '/quizzes/temperamento'
+                          : isIdiomaAmor
+                          ? '/quizzes/idioma-do-amor'
+                          : `/quizzes/${quiz.id}`
+                      }
                       className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
                         isCompleted
                           ? 'bg-warm-100 text-warm-900 hover:bg-warm-200'

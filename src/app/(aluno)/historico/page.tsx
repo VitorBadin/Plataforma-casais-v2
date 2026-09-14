@@ -59,6 +59,12 @@ export default function HistoricoPage() {
               diag.titulo_resultado?.toLowerCase().includes('temperamento') ||
               diag.quiz_titulo?.toLowerCase().includes('temperamento');
 
+            const isIdiomaAmor =
+              diag.quiz_id === 'quiz-idioma-amor' ||
+              diag.id?.startsWith('idioma-result-') ||
+              diag.titulo_resultado?.toLowerCase().includes('idioma') ||
+              diag.quiz_titulo?.toLowerCase().includes('idioma do amor');
+
             return (
               <div
                 key={diag.id}
@@ -73,9 +79,9 @@ export default function HistoricoPage() {
                       <Calendar className="w-3 h-3 text-warm-400" />
                       {new Date(diag.gerado_em).toLocaleDateString('pt-BR')}
                     </span>
-                    {isTemperamento && (
+                    {(isTemperamento || isIdiomaAmor) && (
                       <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                        Laudo Completo Disponível
+                        Laudo Disponível
                       </span>
                     )}
                   </div>
@@ -102,6 +108,23 @@ export default function HistoricoPage() {
                       </Link>
                       <Link
                         href="/quizzes/temperamento/resultado"
+                        className="px-3.5 py-2.5 rounded-xl bg-warm-50 text-warm-700 hover:bg-warm-100 text-xs font-semibold transition-all"
+                      >
+                        Resumo
+                      </Link>
+                    </>
+                  ) : isIdiomaAmor ? (
+                    <>
+                      <Link
+                        href="/quizzes/idioma-do-amor/relatorio"
+                        className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 text-white text-xs font-bold shadow-xs hover:opacity-95 transition-all inline-flex items-center justify-center gap-1.5 shrink-0"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Relatório Completo</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                      <Link
+                        href="/quizzes/idioma-do-amor/resultado"
                         className="px-3.5 py-2.5 rounded-xl bg-warm-50 text-warm-700 hover:bg-warm-100 text-xs font-semibold transition-all"
                       >
                         Resumo

@@ -69,6 +69,24 @@ export const INITIAL_QUIZZES: Quiz[] = [
     ],
   },
   {
+    id: 'quiz-idioma-amor',
+    titulo: 'Seu Idioma do Amor',
+    descricao: 'Descubra sua forma primária e secundária de expressar e receber amor no relacionamento através de 20 cenários práticos.',
+    categoria: 'Linguagens do Amor',
+    ativo: true,
+    criado_em: '2026-09-10T10:00:00Z',
+    questions: [
+      // As perguntas reais estão em idiomaAmorData.ts
+      ...Array.from({ length: 20 }, (_, i) => ({
+        id: `qa-${i + 1}`,
+        quiz_id: 'quiz-idioma-amor',
+        texto: `Cenário ${i + 1}`,
+        tipo: 'multipla_escolha' as const,
+        ordem: i + 1,
+      })),
+    ],
+  },
+  {
     id: 'quiz-1',
     titulo: 'Mapeamento da Saúde da Comunicação no Relacionamento',
     descricao: 'Identifique os padrões de escuta, reatividade e abertura emocional que impactam o diálogo cotidiano do casal.',
