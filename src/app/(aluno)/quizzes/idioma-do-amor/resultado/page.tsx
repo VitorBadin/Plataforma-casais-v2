@@ -19,6 +19,7 @@ import {
   ArrowRight,
   HelpCircle,
 } from 'lucide-react';
+import SpouseQuizSummaryCard from '@/components/SpouseQuizSummaryCard';
 
 export default function IdiomaAmorResultadoPage() {
   const { user } = useAuth();
@@ -326,6 +327,11 @@ export default function IdiomaAmorResultadoPage() {
           </div>
         </div>
       </div>
+
+      {/* ============================================================ */}
+      {/* RESULTADO DO CÔNJUGE & ORIENTAÇÕES CONJUGAIS */}
+      {/* ============================================================ */}
+      <SpouseQuizSummaryCard quizId="quiz-idioma-amor" />
 
       {/* ============================================================ */}
       {/* CTA PRINCIPAL — ACESSAR RELATÓRIO COMPLETO */}

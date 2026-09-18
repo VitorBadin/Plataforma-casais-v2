@@ -89,3 +89,19 @@ export interface ResourceView {
   resource_id: string;
   visualizado_em: string;
 }
+
+export interface Couple {
+  id: string;
+  user_id_1: string;
+  user_id_2: string;
+  criado_em: string;
+}
+
+export interface PartnerGuidance {
+  id: string;
+  quiz_id?: string;
+  resultado_chave: string;
+  texto_resumo: string;
+  tarefas?: string[] | Record<string, any>;
+  criado_em?: string;
+}

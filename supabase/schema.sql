@@ -204,9 +204,17 @@ CREATE POLICY "Admin gerencia regras de diagnostico" ON public.diagnostic_rules
   FOR ALL USING (public.is_admin());
 
 -- POLÍTICAS: USER DIAGNOSTICS
--- Aluno vê seus diagnósticos; Admin pode ver diagnósticos de todos
-CREATE POLICY "Leitura de diagnosticos proprios" ON public.user_diagnostics
-  FOR SELECT USING (auth.uid() = user_id OR public.is_admin());
+-- Aluno vê seus diagnósticos e do cônjuge vinculado; Admin pode ver diagnósticos de todos
+CREATE POLICY "Leitura de diagnosticos proprios e do conjuge" ON public.user_diagnostics
+  FOR SELECT USING (
+    auth.uid() = user_id 
+    OR public.is_admin()
+    OR EXISTS (
+      SELECT 1 FROM public.couples c
+      WHERE (c.user_id_1 = auth.uid() AND c.user_id_2 = public.user_diagnostics.user_id)
+         OR (c.user_id_2 = auth.uid() AND c.user_id_1 = public.user_diagnostics.user_id)
+    )
+  );
 
 -- Inserção de diagnóstico próprio
 CREATE POLICY "Geracao de diagnostico proprio" ON public.user_diagnostics
@@ -275,8 +283,17 @@ CREATE POLICY "Insercao de respostas temperamento proprias" ON public.quiz_tempe
   FOR INSERT WITH CHECK (auth.uid() = user_id AND public.is_ativo());
 
 -- POLÍTICAS: QUIZ TEMPERAMENTO RESULTS
-CREATE POLICY "Leitura de resultados temperamento proprios" ON public.quiz_temperamento_results
-  FOR SELECT USING (auth.uid() = user_id OR public.is_admin());
+-- Aluno vê seus resultados e do cônjuge vinculado; Admin vê de todos
+CREATE POLICY "Leitura de resultados temperamento proprios e do conjuge" ON public.quiz_temperamento_results
+  FOR SELECT USING (
+    auth.uid() = user_id 
+    OR public.is_admin()
+    OR EXISTS (
+      SELECT 1 FROM public.couples c
+      WHERE (c.user_id_1 = auth.uid() AND c.user_id_2 = public.quiz_temperamento_results.user_id)
+         OR (c.user_id_2 = auth.uid() AND c.user_id_1 = public.quiz_temperamento_results.user_id)
+    )
+  );
 
 CREATE POLICY "Insercao de resultados temperamento proprios" ON public.quiz_temperamento_results
   FOR INSERT WITH CHECK (auth.uid() = user_id AND public.is_ativo());
@@ -382,8 +399,18 @@ CREATE POLICY "Leitura de respostas idioma amor proprias" ON public.quiz_love_la
 CREATE POLICY "Insercao de respostas idioma amor proprias" ON public.quiz_love_language_answers
   FOR INSERT WITH CHECK (auth.uid() = user_id AND public.is_ativo());
 
-CREATE POLICY "Leitura de resultados idioma amor proprios" ON public.quiz_love_language_results
-  FOR SELECT USING (auth.uid() = user_id OR public.is_admin());
+-- POLÍTICAS: QUIZ IDIOMA DO AMOR RESULTS
+-- Aluno vê seus resultados e do cônjuge vinculado; Admin vê de todos
+CREATE POLICY "Leitura de resultados idioma amor proprios e do conjuge" ON public.quiz_love_language_results
+  FOR SELECT USING (
+    auth.uid() = user_id 
+    OR public.is_admin()
+    OR EXISTS (
+      SELECT 1 FROM public.couples c
+      WHERE (c.user_id_1 = auth.uid() AND c.user_id_2 = public.quiz_love_language_results.user_id)
+         OR (c.user_id_2 = auth.uid() AND c.user_id_1 = public.quiz_love_language_results.user_id)
+    )
+  );
 
 CREATE POLICY "Insercao de resultados idioma amor proprios" ON public.quiz_love_language_results
   FOR INSERT WITH CHECK (auth.uid() = user_id AND public.is_ativo());
@@ -392,6 +419,53 @@ CREATE POLICY "Leitura pública/autenticada de relatórios idioma do amor" ON pu
   FOR SELECT USING (true);
 
 CREATE POLICY "Admin gerencia relatórios de idioma do amor" ON public.love_language_reports
+  FOR ALL USING (public.is_admin());
+
+-- ========================================================
+-- VÍNCULO DE CASAIS E ORIENTAÇÕES CONJUGAIS
+-- ========================================================
+
+-- 16. TABELA DE VÍNCULO ENTRE CÔNJUGES (couples)
+-- Gerenciado exclusivamente pelo Admin; vínculo mútuo entre duas contas
+CREATE TABLE IF NOT EXISTS public.couples (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id_1 UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id_2 UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  criado_em TIMESTAMPTZ DEFAULT now(),
+  CONSTRAINT chk_different_users CHECK (user_id_1 <> user_id_2)
+);
+
+-- Garantir que cada usuário só tenha um cônjuge ativo por vez
+CREATE UNIQUE INDEX IF NOT EXISTS idx_couples_unique_user1 ON public.couples (user_id_1);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_couples_unique_user2 ON public.couples (user_id_2);
+
+-- 17. TABELA DE ORIENTAÇÕES CONJUGAIS POR RESULTADO DO PARCEIRO (partner_guidance)
+CREATE TABLE IF NOT EXISTS public.partner_guidance (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  quiz_id UUID REFERENCES public.quizzes(id) ON DELETE CASCADE,
+  resultado_chave TEXT NOT NULL, -- Ex: 'colerico', 'sanguineo', 'palavras', 'tempo'
+  texto_resumo TEXT,
+  tarefas JSONB DEFAULT '[]'::jsonb,
+  criado_em TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_partner_guidance_quiz ON public.partner_guidance(quiz_id);
+CREATE INDEX IF NOT EXISTS idx_partner_guidance_chave ON public.partner_guidance(resultado_chave);
+
+-- RLS: COUPLES & PARTNER GUIDANCE
+ALTER TABLE public.couples ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.partner_guidance ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Leitura de casal próprio" ON public.couples
+  FOR SELECT USING (auth.uid() = user_id_1 OR auth.uid() = user_id_2 OR public.is_admin());
+
+CREATE POLICY "Admin gerencia casais" ON public.couples
+  FOR ALL USING (public.is_admin());
+
+CREATE POLICY "Alunos ativos leem orientacoes conjugais" ON public.partner_guidance
+  FOR SELECT USING (public.is_ativo() OR public.is_admin());
+
+CREATE POLICY "Admin gerencia orientacoes conjugais" ON public.partner_guidance
   FOR ALL USING (public.is_admin());
 
 -- ========================================================

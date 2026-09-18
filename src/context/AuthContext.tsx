@@ -1,8 +1,16 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Profile, StatusAcesso } from '@/types/database';
-import { INITIAL_PROFILES, getStoredProfiles, saveStoredProfiles } from '@/lib/mockData';
+import { Profile, StatusAcesso, Couple, PartnerGuidance } from '@/types/database';
+import {
+  INITIAL_PROFILES,
+  getStoredProfiles,
+  saveStoredProfiles,
+  getStoredCouples,
+  saveStoredCouples,
+  getStoredPartnerGuidance,
+  saveStoredPartnerGuidance,
+} from '@/lib/mockData';
 import { createClient } from '@/lib/supabase/client';
 
 interface AuthContextType {
@@ -13,6 +21,12 @@ interface AuthContextType {
   logout: () => void;
   updateUserStatus: (userId: string, newStatus: StatusAcesso) => void;
   profilesList: Profile[];
+  couples: Couple[];
+  partnerGuidanceList: PartnerGuidance[];
+  linkCouple: (userId1: string, userId2: string) => Promise<{ success: boolean; error?: string }>;
+  unlinkCouple: (userId: string) => Promise<{ success: boolean }>;
+  getSpouse: (userId: string) => Profile | null;
+  getSpouseCouple: (userId: string) => Couple | null;
   refreshProfiles: () => void;
 }
 
@@ -21,12 +35,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<Profile | null>(null);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [couples, setCouples] = useState<Couple[]>([]);
+  const [partnerGuidanceList, setPartnerGuidanceList] = useState<PartnerGuidance[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Inicializa lista de perfis do storage local ou mock
+    // Inicializa lista de perfis, casais e orientações do storage local ou mock
     const currentProfiles = getStoredProfiles();
+    const currentCouples = getStoredCouples();
+    const currentGuidance = getStoredPartnerGuidance();
+
     setProfiles(currentProfiles);
+    setCouples(currentCouples);
+    setPartnerGuidanceList(currentGuidance);
 
     // Checa se há sessão salva localmente
     const savedUser = localStorage.getItem('psi_current_user');
@@ -52,7 +73,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabase = createClient();
     if (supabase) {
       // Integração Supabase Auth estaria ativa aqui
-      // Ex: const { data, error } = await supabase.auth.signInWithPassword(...)
     }
 
     // Validação / Simulação
@@ -102,12 +122,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       criado_em: new Date().toISOString(),
     };
 
-    /*
-      [EXPANSÃO FUTURA - INTEGRAÇÃO DE PAGAMENTO]
-      Aqui será disparada a chamada para a gateway de pagamento (Hotmart, Eduzz, Kiwify, Stripe).
-      Após a confirmação do webhook de checkout, o status_acesso será alterado automaticamente para 'ativo'.
-    */
-
     const updated = [...currentProfiles, newProfile];
     saveStoredProfiles(updated);
     setProfiles(updated);
@@ -138,8 +152,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const getSpouseCouple = (userId: string): Couple | null => {
+    return couples.find(c => c.user_id_1 === userId || c.user_id_2 === userId) || null;
+  };
+
+  const getSpouse = (userId: string): Profile | null => {
+    const couple = getSpouseCouple(userId);
+    if (!couple) return null;
+    const spouseId = couple.user_id_1 === userId ? couple.user_id_2 : couple.user_id_1;
+    return profiles.find(p => p.id === spouseId || p.user_id === spouseId) || null;
+  };
+
+  const linkCouple = async (userId1: string, userId2: string): Promise<{ success: boolean; error?: string }> => {
+    if (userId1 === userId2) {
+      return { success: false, error: 'Não é possível vincular um usuário a si mesmo.' };
+    }
+
+    // Remove qualquer vínculo prévio existente para qualquer um dos dois (regra do MVP: 1 cônjuge por vez)
+    const cleaned = couples.filter(
+      c => c.user_id_1 !== userId1 && c.user_id_2 !== userId1 &&
+           c.user_id_1 !== userId2 && c.user_id_2 !== userId2
+    );
+
+    const newCouple: Couple = {
+      id: `couple-${Date.now()}`,
+      user_id_1: userId1,
+      user_id_2: userId2,
+      criado_em: new Date().toISOString(),
+    };
+
+    const updated = [...cleaned, newCouple];
+    saveStoredCouples(updated);
+    setCouples(updated);
+
+    return { success: true };
+  };
+
+  const unlinkCouple = async (userId: string): Promise<{ success: boolean }> => {
+    const updated = couples.filter(c => c.user_id_1 !== userId && c.user_id_2 !== userId);
+    saveStoredCouples(updated);
+    setCouples(updated);
+    return { success: true };
+  };
+
   const refreshProfiles = () => {
     setProfiles(getStoredProfiles());
+    setCouples(getStoredCouples());
+    setPartnerGuidanceList(getStoredPartnerGuidance());
   };
 
   return (
@@ -151,6 +210,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       updateUserStatus,
       profilesList: profiles,
+      couples,
+      partnerGuidanceList,
+      linkCouple,
+      unlinkCouple,
+      getSpouse,
+      getSpouseCouple,
       refreshProfiles
     }}>
       {children}
@@ -165,3 +230,4 @@ export function useAuth() {
   }
   return context;
 }
+

@@ -124,7 +124,7 @@ export default function CadastroPage() {
               <div>
                 <h4 className="text-xs font-bold text-warm-900">Termo de Privacidade & Dados Emocionais</h4>
                 <p className="text-[11px] text-warm-700 leading-relaxed mt-0.5">
-                  Ao se cadastrar, você declara ciência de que seus dados, respostas a quizzes e diagnósticos tratam de aspectos de saúde emocional e relacionamento. Suas respostas são <strong>individuais e confidenciais</strong>, acessíveis apenas por você e pela equipe clínica da Dra. Elaine Souza. Não há compartilhamento automático de respostas com seu/sua parceiro(a).
+                  Ao se cadastrar, você declara ciência de que seus dados, respostas a quizzes e diagnósticos tratam de aspectos de desenvolvimento emocional e relacionamento. Suas respostas detalhadas pergunta a pergunta são <strong>individuais e confidenciais</strong>, acessíveis apenas por você e pela equipe clínica da Dra. Elaine Souza. Caso a administração vincule sua conta ao seu cônjuge, os <strong>resultados resumidos e laudos</strong> dos quizzes que ambos responderem passarão a ser compartilhados entre as duas contas para acompanhamento conjunto de mentoria.
                 </p>
               </div>
             </div>

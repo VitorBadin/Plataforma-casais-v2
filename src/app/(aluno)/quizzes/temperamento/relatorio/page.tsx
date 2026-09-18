@@ -29,6 +29,7 @@ import {
   Calendar,
   Brain,
 } from 'lucide-react';
+import SpouseQuizSummaryCard from '@/components/SpouseQuizSummaryCard';
 
 export default function TemperamentoRelatorioCompletoPage() {
   const { user } = useAuth();
@@ -822,6 +823,11 @@ export default function TemperamentoRelatorioCompletoPage() {
           </div>
         </div>
       </section>
+
+      {/* ============================================================ */}
+      {/* VÍNCULO DE CASAL — RESULTADO DO CÔNJUGE & ORIENTAÇÕES */}
+      {/* ============================================================ */}
+      <SpouseQuizSummaryCard quizId="quiz-temperamento" />
 
       {/* ============================================================ */}
       {/* RODAPÉ DE AÇÕES (Oculta na Impressão) */}

@@ -1,4 +1,4 @@
-import { Profile, Quiz, Question, DiagnosticRule, ResourceItem, UserDiagnostic, Answer } from '@/types/database';
+import { Profile, Quiz, Question, DiagnosticRule, ResourceItem, UserDiagnostic, Answer, Couple, PartnerGuidance } from '@/types/database';
 
 export const INITIAL_PROFILES: Profile[] = [
   {
@@ -286,7 +286,50 @@ export const INITIAL_DIAGNOSTICS: UserDiagnostic[] = [
     gerado_em: '2026-08-28T16:00:00Z',
     quiz_titulo: 'Mapeamento da Saúde da Comunicação no Relacionamento',
   },
+  {
+    id: 'diag-carlos-1',
+    user_id: 'usr-2',
+    quiz_id: 'quiz-1',
+    pontuacao_total: 14,
+    titulo_resultado: 'Alta Conexão e Diálogo Empático',
+    resultado_texto: 'Suas respostas indicam um nível elevado de segurança emocional e abertura no diálogo cotidiano.',
+    gerado_em: '2026-08-29T11:00:00Z',
+    quiz_titulo: 'Mapeamento da Saúde da Comunicação no Relacionamento',
+  },
+  {
+    id: 'diag-carlos-temp',
+    user_id: 'usr-2',
+    quiz_id: 'quiz-temperamento',
+    pontuacao_total: 18,
+    titulo_resultado: 'Sanguíneo (Intensidade: Forte) com Secundário Colérico',
+    resultado_texto: 'Perfil predominantemente comunicativo, entusiasmado e caloroso, com capacidade de iniciativa.',
+    gerado_em: '2026-09-02T14:00:00Z',
+    quiz_titulo: 'Teste de Temperamento',
+  },
+  {
+    id: 'diag-carlos-idioma',
+    user_id: 'usr-2',
+    quiz_id: 'quiz-idioma-amor',
+    pontuacao_total: 35,
+    titulo_resultado: 'Tempo de Qualidade (35%) & Toque Físico (25%)',
+    resultado_texto: 'Sente-se amado principalmente através de momentos dedicados de presença atenta e gestos de carinho.',
+    gerado_em: '2026-09-11T16:00:00Z',
+    quiz_titulo: 'Seu Idioma do Amor',
+  },
 ];
+
+// Vínculo inicial demonstrativo: Mariana Silva (usr-1) e Carlos Eduardo (usr-2)
+export const INITIAL_COUPLES: Couple[] = [
+  {
+    id: 'couple-1',
+    user_id_1: 'usr-1',
+    user_id_2: 'usr-2',
+    criado_em: '2026-08-20T10:00:00Z',
+  },
+];
+
+// Tabela de orientações do parceiro vazia por padrão
+export const INITIAL_PARTNER_GUIDANCE: PartnerGuidance[] = [];
 
 // Helper para gerenciar storage local simulado (para desenvolvimento fluido sem backend)
 export const getStoredProfiles = (): Profile[] => {
@@ -302,6 +345,48 @@ export const getStoredProfiles = (): Profile[] => {
 export const saveStoredProfiles = (profiles: Profile[]) => {
   if (typeof window !== 'undefined') {
     localStorage.setItem('psi_profiles', JSON.stringify(profiles));
+  }
+};
+
+export const getStoredCouples = (): Couple[] => {
+  if (typeof window === 'undefined') return INITIAL_COUPLES;
+  const stored = localStorage.getItem('psi_couples');
+  if (!stored) {
+    localStorage.setItem('psi_couples', JSON.stringify(INITIAL_COUPLES));
+    return INITIAL_COUPLES;
+  }
+  try {
+    return JSON.parse(stored);
+  } catch {
+    localStorage.setItem('psi_couples', JSON.stringify(INITIAL_COUPLES));
+    return INITIAL_COUPLES;
+  }
+};
+
+export const saveStoredCouples = (couples: Couple[]) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('psi_couples', JSON.stringify(couples));
+  }
+};
+
+export const getStoredPartnerGuidance = (): PartnerGuidance[] => {
+  if (typeof window === 'undefined') return INITIAL_PARTNER_GUIDANCE;
+  const stored = localStorage.getItem('psi_partner_guidance');
+  if (!stored) {
+    localStorage.setItem('psi_partner_guidance', JSON.stringify(INITIAL_PARTNER_GUIDANCE));
+    return INITIAL_PARTNER_GUIDANCE;
+  }
+  try {
+    return JSON.parse(stored);
+  } catch {
+    localStorage.setItem('psi_partner_guidance', JSON.stringify(INITIAL_PARTNER_GUIDANCE));
+    return INITIAL_PARTNER_GUIDANCE;
+  }
+};
+
+export const saveStoredPartnerGuidance = (guidance: PartnerGuidance[]) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('psi_partner_guidance', JSON.stringify(guidance));
   }
 };
 
@@ -340,3 +425,4 @@ export const saveStoredQuizzes = (quizzes: Quiz[]) => {
     localStorage.setItem('psi_quizzes', JSON.stringify(quizzes));
   }
 };
+

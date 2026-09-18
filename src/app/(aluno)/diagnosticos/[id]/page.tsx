@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { INITIAL_DIAGNOSTICS } from '@/lib/mockData';
 import { UserDiagnostic } from '@/types/database';
 import { Award, ArrowLeft, HeartHandshake, Printer, BookOpen, ShieldCheck, Sparkles, Share2 } from 'lucide-react';
+import SpouseQuizSummaryCard from '@/components/SpouseQuizSummaryCard';
 
 export default function DiagnosticResultPage() {
   const params = useParams();
@@ -185,6 +186,11 @@ export default function DiagnosticResultPage() {
           </div>
         </div>
       </div>
+
+      {/* ============================================================ */}
+      {/* RESULTADO DO CÔNJUGE & ORIENTAÇÕES CONJUGAIS */}
+      {/* ============================================================ */}
+      <SpouseQuizSummaryCard quizId={diagnostic.quiz_id} />
 
       {/* Próximos Passos */}
       <div className="bg-white rounded-3xl p-6 border border-brand-100 shadow-card flex flex-col sm:flex-row items-center justify-between gap-4">

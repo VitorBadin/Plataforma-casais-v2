@@ -19,6 +19,7 @@ import {
   FileText,
   ArrowRight,
 } from 'lucide-react';
+import SpouseQuizSummaryCard from '@/components/SpouseQuizSummaryCard';
 
 // ========================================================
 // TELA DE RESULTADO — TESTE DE TEMPERAMENTO
@@ -349,6 +350,11 @@ export default function TemperamentoResultadoPage() {
           </div>
         </div>
       </div>
+
+      {/* ============================================================ */}
+      {/* RESULTADO DO CÔNJUGE & ORIENTAÇÕES CONJUGAIS */}
+      {/* ============================================================ */}
+      <SpouseQuizSummaryCard quizId="quiz-temperamento" />
 
       {/* ============================================================ */}
       {/* CTA PRINCIPAL — ACESSAR RELATÓRIO COMPLETO */}
