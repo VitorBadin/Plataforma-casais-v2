@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { INITIAL_RESOURCES } from '@/lib/mockData';
+import React, { useState, useEffect } from 'react';
+import { INITIAL_RESOURCES, getStoredResources } from '@/lib/mockData';
 import { ResourceItem } from '@/types/database';
 import { BookOpen, Search, Download, ExternalLink, FileText, CheckCircle2 } from 'lucide-react';
 
@@ -9,6 +9,10 @@ export default function BibliotecaPage() {
   const [resources, setResources] = useState<ResourceItem[]>(INITIAL_RESOURCES);
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  useEffect(() => {
+    setResources(getStoredResources());
+  }, []);
 
   const categories = ['Todos', 'Ebooks', 'Guias Práticos', 'Exercícios & Planners'];
 

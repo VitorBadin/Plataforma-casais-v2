@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { getStoredQuizzes, INITIAL_RESOURCES } from '@/lib/mockData';
+import { getStoredQuizzes, getStoredResources } from '@/lib/mockData';
 import { 
   ShieldCheck, 
   Users, 
@@ -20,10 +20,14 @@ import {
 export default function AdminDashboardPage() {
   const { profilesList, updateUserStatus, refreshProfiles } = useAuth();
   const [quizzesCount, setQuizzesCount] = useState(0);
+  const [resourcesCount, setResourcesCount] = useState(0);
 
   useEffect(() => {
     refreshProfiles();
-    setQuizzesCount(getStoredQuizzes().length);
+    const qList = getStoredQuizzes();
+    setQuizzesCount(qList.length);
+    const rList = getStoredResources();
+    setResourcesCount(rList.length);
   }, []);
 
   const pendingUsers = profilesList.filter((p) => p.status_acesso === 'pendente');
@@ -111,7 +115,7 @@ export default function AdminDashboardPage() {
           </div>
           <div>
             <p className="text-xs text-warm-700 font-medium">Materiais na Biblioteca</p>
-            <p className="text-xl font-bold text-warm-900 font-heading">{INITIAL_RESOURCES.length}</p>
+            <p className="text-xl font-bold text-warm-900 font-heading">{resourcesCount}</p>
           </div>
         </div>
       </div>

@@ -426,3 +426,25 @@ export const saveStoredQuizzes = (quizzes: Quiz[]) => {
   }
 };
 
+export const getStoredResources = (): ResourceItem[] => {
+  if (typeof window === 'undefined') return INITIAL_RESOURCES;
+  const stored = localStorage.getItem('psi_resources');
+  if (!stored) {
+    localStorage.setItem('psi_resources', JSON.stringify(INITIAL_RESOURCES));
+    return INITIAL_RESOURCES;
+  }
+  try {
+    return JSON.parse(stored);
+  } catch {
+    localStorage.setItem('psi_resources', JSON.stringify(INITIAL_RESOURCES));
+    return INITIAL_RESOURCES;
+  }
+};
+
+export const saveStoredResources = (resources: ResourceItem[]) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('psi_resources', JSON.stringify(resources));
+  }
+};
+
+

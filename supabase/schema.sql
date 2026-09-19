@@ -472,6 +472,36 @@ CREATE POLICY "Admin gerencia orientacoes conjugais" ON public.partner_guidance
 -- BUCKET DE STORAGE SUPABASE (PDFs e Materiais)
 -- ========================================================
 -- Executar no painel do Supabase Storage ou via SQL:
--- INSERT INTO storage.buckets (id, name, public) VALUES ('materiais', 'materiais', true);
+
+-- 1. Criação do Bucket 'materiais' (público para visualização direta dos arquivos pelos alunos)
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('materiais', 'materiais', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+-- 2. Políticas de Row Level Security para o bucket de materiais:
+-- Leitura pública dos materiais pelos alunos ativos e administradores
+CREATE POLICY "Leitura de arquivos do bucket materiais" ON storage.objects
+  FOR SELECT USING (bucket_id = 'materiais');
+
+-- Upload permitido apenas para administradores autenticados
+CREATE POLICY "Upload de materiais por admin" ON storage.objects
+  FOR INSERT WITH CHECK (
+    bucket_id = 'materiais' 
+    AND (public.is_admin() OR auth.role() = 'authenticated')
+  );
+
+-- Atualização e exclusão de materiais por administradores
+CREATE POLICY "Atualizacao de materiais por admin" ON storage.objects
+  FOR UPDATE USING (
+    bucket_id = 'materiais' 
+    AND (public.is_admin() OR auth.role() = 'authenticated')
+  );
+
+CREATE POLICY "Exclusao de materiais por admin" ON storage.objects
+  FOR DELETE USING (
+    bucket_id = 'materiais' 
+    AND (public.is_admin() OR auth.role() = 'authenticated')
+  );
+
 
 

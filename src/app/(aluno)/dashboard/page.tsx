@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { 
   getStoredQuizzes, 
+  getStoredResources,
   INITIAL_DIAGNOSTICS, 
   INITIAL_RESOURCES 
 } from '@/lib/mockData';
@@ -31,7 +32,7 @@ export default function StudentDashboard() {
   useEffect(() => {
     const loadedQuizzes = getStoredQuizzes();
     setQuizzes(loadedQuizzes);
-    setResources(INITIAL_RESOURCES);
+    setResources(getStoredResources());
 
     // Carrega diagnósticos salvos localmente
     const storedDiags = localStorage.getItem(`psi_diagnostics_${user?.id}`);
