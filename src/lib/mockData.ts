@@ -5,7 +5,7 @@ export const INITIAL_PROFILES: Profile[] = [
     id: 'prof-admin',
     user_id: 'usr-admin',
     nome: 'Dra. Elaine Souza',
-    email: 'elaine@psielainesouza.com.br',
+    email: 'contato@elainecsouzapsi.com.br',
     status_acesso: 'ativo',
     role: 'admin',
     criado_em: '2026-01-01T08:00:00Z',
@@ -260,7 +260,7 @@ export const getStoredProfiles = (): Profile[] => {
     // Limpa contas antigas de teste se existirem
     const filtered = parsed.filter(p => !p.email.endsWith('@exemplo.com'));
     // Garante que o perfil da Dra. Elaine admin sempre exista
-    if (!filtered.some(p => p.role === 'admin' || p.email === 'elaine@psielainesouza.com.br')) {
+    if (!filtered.some(p => p.role === 'admin' || p.email === 'contato@elainecsouzapsi.com.br')) {
       filtered.push(INITIAL_PROFILES[0]);
     }
     if (filtered.length !== parsed.length) {

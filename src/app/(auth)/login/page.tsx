@@ -20,7 +20,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await login(email);
+      const res = await login(email, password);
       if (res.success) {
         if (res.status === 'pendente') {
           router.push('/pendente');
@@ -29,9 +29,11 @@ export default function LoginPage() {
         } else {
           router.push('/dashboard');
         }
+      } else {
+        setError(res.error || 'E-mail ou senha inválidos. Tente novamente.');
       }
     } catch (err: any) {
-      setError('E-mail ou senha inválidos. Tente novamente.');
+      setError(err.message || 'E-mail ou senha inválidos. Tente novamente.');
     } finally {
       setLoading(false);
     }

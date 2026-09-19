@@ -27,13 +27,15 @@ export default function CadastroPage() {
     setLoading(true);
 
     try {
-      const res = await signup(nome, email);
+      const res = await signup(nome, email, senha);
       if (res.success) {
         // Redireciona para a tela de conta pendente de aprovação manual
         router.push('/pendente');
+      } else {
+        setError(res.error || 'Erro ao criar cadastro. Tente novamente.');
       }
     } catch (err: any) {
-      setError('Erro ao criar cadastro. Tente novamente.');
+      setError(err.message || 'Erro ao criar cadastro. Tente novamente.');
     } finally {
       setLoading(false);
     }
