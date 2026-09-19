@@ -28,6 +28,7 @@ interface AuthContextType {
   getSpouse: (userId: string) => Profile | null;
   getSpouseCouple: (userId: string) => Couple | null;
   refreshProfiles: () => Promise<void>;
+  refreshCurrentUser: () => Promise<Profile | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -76,6 +77,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setPartnerGuidanceList(getStoredPartnerGuidance());
   };
 
+  const refreshCurrentUser = async (): Promise<Profile | null> => {
+    const supabase = createClient();
+    if (supabase) {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const authUser = sessionData?.session?.user;
+        const currentSaved = localStorage.getItem('psi_current_user');
+        const parsedSaved = currentSaved ? JSON.parse(currentSaved) : null;
+        const searchId = authUser?.id || parsedSaved?.user_id || parsedSaved?.id;
+        const searchEmail = authUser?.email || parsedSaved?.email;
+
+        if (searchId || searchEmail) {
+          let query = supabase.from('profiles').select('*');
+          if (searchId && searchEmail) {
+            query = query.or(`user_id.eq.${searchId},id.eq.${searchId},email.eq.${searchEmail}`);
+          } else if (searchId) {
+            query = query.or(`user_id.eq.${searchId},id.eq.${searchId}`);
+          } else {
+            query = query.eq('email', searchEmail);
+          }
+
+          const { data: profile } = await query.maybeSingle();
+
+          if (profile) {
+            const updatedProfile = profile as Profile;
+            setUser(updatedProfile);
+            localStorage.setItem('psi_current_user', JSON.stringify(updatedProfile));
+            return updatedProfile;
+          }
+        }
+      } catch (err) {
+        console.warn('Erro ao atualizar usuário atual:', err);
+      }
+    }
+    return user;
+  };
+
   useEffect(() => {
     const supabase = createClient();
     let authSubscription: { unsubscribe: () => void } | null = null;
@@ -92,7 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const { data: profile } = await supabase
               .from('profiles')
               .select('*')
-              .eq('user_id', authUser.id)
+              .or(`user_id.eq.${authUser.id},id.eq.${authUser.id},email.eq.${authUser.email}`)
               .maybeSingle();
 
             if (profile) {
@@ -115,7 +153,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const savedUser = localStorage.getItem('psi_current_user');
             if (savedUser) {
               try {
-                setUser(JSON.parse(savedUser));
+                const parsed = JSON.parse(savedUser);
+                setUser(parsed);
+                // Tenta validar no Supabase
+                if (parsed.email) {
+                  const { data: remoteProfile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .or(`email.eq.${parsed.email},id.eq.${parsed.id}`)
+                    .maybeSingle();
+                  if (remoteProfile) {
+                    setUser(remoteProfile as Profile);
+                    localStorage.setItem('psi_current_user', JSON.stringify(remoteProfile));
+                  }
+                }
               } catch {
                 setUser(null);
               }
@@ -134,7 +185,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const { data: profile } = await supabase
               .from('profiles')
               .select('*')
-              .eq('user_id', session.user.id)
+              .or(`user_id.eq.${session.user.id},id.eq.${session.user.id},email.eq.${session.user.email}`)
               .maybeSingle();
             if (profile) {
               setUser(profile as Profile);
@@ -188,7 +239,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const { data: profile } = await supabase
             .from('profiles')
             .select('*')
-            .eq('user_id', authData.user.id)
+            .or(`user_id.eq.${authData.user.id},id.eq.${authData.user.id},email.eq.${email.trim()}`)
             .maybeSingle();
 
           const activeProfile = profile || {
@@ -311,10 +362,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabase = createClient();
     if (supabase) {
       try {
-        await supabase
-          .from('profiles')
-          .update({ status_acesso: newStatus })
-          .or(`id.eq.${userId},user_id.eq.${userId}`);
+        // Tenta via RPC com SECURITY DEFINER
+        const { error: rpcErr } = await supabase.rpc('update_user_access_status', {
+          p_user_id: userId,
+          p_status: newStatus,
+        });
+
+        if (rpcErr) {
+          console.warn('Tentando fallback direto de update:', rpcErr.message);
+          await supabase
+            .from('profiles')
+            .update({ status_acesso: newStatus })
+            .or(`id.eq.${userId},user_id.eq.${userId}`);
+        }
       } catch (err) {
         console.warn('Erro ao atualizar status no Supabase:', err);
       }
@@ -416,7 +476,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       unlinkCouple,
       getSpouse,
       getSpouseCouple,
-      refreshProfiles
+      refreshProfiles,
+      refreshCurrentUser
     }}>
       {children}
     </AuthContext.Provider>
