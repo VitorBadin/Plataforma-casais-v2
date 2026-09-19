@@ -332,6 +332,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(updatedCurrentUser);
       localStorage.setItem('psi_current_user', JSON.stringify(updatedCurrentUser));
     }
+
+    await refreshProfiles();
   };
 
   const getSpouseCouple = (userId: string): Couple | null => {
