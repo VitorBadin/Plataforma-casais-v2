@@ -59,7 +59,7 @@ export default function PendentePage() {
 
         <div className="space-y-3 pt-2">
           <a
-            href="https://wa.me/5500000000000?text=Olá!%20Fiz%20meu%20cadastro%20na%20plataforma%20e%20gostaria%20de%20confirmar%20meu%20pagamento."
+            href="https://wa.me/5511997327231?text=Ol%C3%A1!%20Fiz%20meu%20cadastro%20na%20plataforma%20e%20gostaria%20de%20confirmar%20meu%20pagamento."
             target="_blank"
             rel="noopener noreferrer"
             className="w-full py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md transition-all flex items-center justify-center gap-2 text-sm"

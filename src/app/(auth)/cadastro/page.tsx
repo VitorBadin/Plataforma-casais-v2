@@ -129,18 +129,27 @@ export default function CadastroPage() {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setAceitoTermos(!aceitoTermos)}
-              className="flex items-center gap-2 text-xs font-semibold text-warm-900 pt-2 hover:text-brand-600 transition-colors"
-            >
-              {aceitoTermos ? (
-                <CheckSquare className="w-4 h-4 text-brand-600 shrink-0" />
-              ) : (
-                <Square className="w-4 h-4 text-warm-400 shrink-0" />
-              )}
-              <span>Li e aceito os termos de privacidade e sigilo individual.</span>
-            </button>
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setAceitoTermos(!aceitoTermos)}
+                className="flex items-center gap-2 text-xs font-semibold text-warm-900 hover:text-brand-600 transition-colors shrink-0"
+              >
+                {aceitoTermos ? (
+                  <CheckSquare className="w-4 h-4 text-brand-600 shrink-0" />
+                ) : (
+                  <Square className="w-4 h-4 text-warm-400 shrink-0" />
+                )}
+                <span>Li e concordo com os</span>
+              </button>
+              <Link
+                href="/termos-de-consentimento"
+                target="_blank"
+                className="text-xs font-bold text-brand-600 underline hover:text-brand-700"
+              >
+                Termos de Consentimento
+              </Link>
+            </div>
           </div>
 
           {/* 
