@@ -44,10 +44,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabase = createClient();
     if (supabase) {
       try {
-        const { data: profilesData } = await supabase.from('profiles').select('*').order('criado_em', { ascending: false });
-        if (profilesData && profilesData.length > 0) {
-          setProfiles(profilesData as Profile[]);
-          saveStoredProfiles(profilesData as Profile[]);
+        const { data: profilesData, error: profErr } = await supabase.from('profiles').select('*').order('criado_em', { ascending: false });
+        if (profilesData) {
+          const list = [...(profilesData as Profile[])];
+          if (!list.some(p => p.role === 'admin' || p.email === 'contato@elainecsouzapsi.com.br')) {
+            list.unshift(INITIAL_PROFILES[0]);
+          }
+          setProfiles(list);
+          saveStoredProfiles(list);
         }
 
         const { data: couplesData } = await supabase.from('couples').select('*');
@@ -73,9 +77,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    const supabase = createClient();
+    let authSubscription: { unsubscribe: () => void } | null = null;
+
     const initAuth = async () => {
       setLoading(true);
-      const supabase = createClient();
 
       if (supabase) {
         try {
@@ -93,7 +99,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setUser(profile as Profile);
               localStorage.setItem('psi_current_user', JSON.stringify(profile));
             } else {
-              // Fallback para perfil admin local ou temporário
               const fallbackProfile: Profile = {
                 id: `prof-${authUser.id}`,
                 user_id: authUser.id,
@@ -107,7 +112,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               localStorage.setItem('psi_current_user', JSON.stringify(fallbackProfile));
             }
           } else {
-            // Checa cache local
             const savedUser = localStorage.getItem('psi_current_user');
             if (savedUser) {
               try {
@@ -123,6 +127,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const savedUser = localStorage.getItem('psi_current_user');
           if (savedUser) setUser(JSON.parse(savedUser));
         }
+
+        // Listener para sincronização automática em tempo real
+        const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+          if (session?.user) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+            if (profile) {
+              setUser(profile as Profile);
+              localStorage.setItem('psi_current_user', JSON.stringify(profile));
+            }
+          } else if (event === 'SIGNED_OUT') {
+            setUser(null);
+            localStorage.removeItem('psi_current_user');
+          }
+          await refreshProfiles();
+        });
+
+        authSubscription = data.subscription;
       } else {
         const savedUser = localStorage.getItem('psi_current_user');
         if (savedUser) setUser(JSON.parse(savedUser));
@@ -133,6 +158,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     initAuth();
+
+    return () => {
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
+    };
   }, []);
 
   const login = async (email: string, password?: string): Promise<{ success: boolean; error?: string; status?: StatusAcesso }> => {

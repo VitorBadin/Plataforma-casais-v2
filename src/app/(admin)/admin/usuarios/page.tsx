@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { StatusAcesso, Profile } from '@/types/database';
 import {
@@ -20,9 +20,20 @@ import {
 } from 'lucide-react';
 
 export default function AdminUsuariosPage() {
-  const { profilesList, updateUserStatus, getSpouse, linkCouple, unlinkCouple } = useAuth();
+  const { profilesList, updateUserStatus, getSpouse, linkCouple, unlinkCouple, refreshProfiles } = useAuth();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'todos' | StatusAcesso>('todos');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    refreshProfiles();
+  }, []);
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    await refreshProfiles();
+    setTimeout(() => setIsRefreshing(false), 600);
+  };
 
   // Estado do Modal de Vínculo de Casal
   const [selectedProfileForCouple, setSelectedProfileForCouple] = useState<Profile | null>(null);
@@ -88,15 +99,26 @@ export default function AdminUsuariosPage() {
             </p>
           </div>
 
-          <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 text-warm-700 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por nome ou e-mail..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-warm-200 bg-rose-soft/40 text-warm-900 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative w-full sm:w-72">
+              <Search className="w-4 h-4 text-warm-700 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por nome ou e-mail..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-warm-200 bg-rose-soft/40 text-warm-900 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+            <button
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              title="Recarregar Lista do Banco"
+              className="p-2.5 rounded-xl bg-white border border-warm-200 hover:bg-rose-soft text-warm-700 transition-all shadow-xs shrink-0 flex items-center gap-1 text-xs font-semibold"
+            >
+              <RefreshCw className={`w-4 h-4 text-brand-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Atualizar</span>
+            </button>
           </div>
         </div>
 
