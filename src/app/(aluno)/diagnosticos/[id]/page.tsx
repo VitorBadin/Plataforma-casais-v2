@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { INITIAL_DIAGNOSTICS } from '@/lib/mockData';
 import { UserDiagnostic } from '@/types/database';
 import { Award, ArrowLeft, HeartHandshake, Printer, BookOpen, ShieldCheck, Sparkles, Share2 } from 'lucide-react';
 import SpouseQuizSummaryCard from '@/components/SpouseQuizSummaryCard';
@@ -15,27 +14,50 @@ export default function DiagnosticResultPage() {
   const diagId = params.id as string;
 
   const [diagnostic, setDiagnostic] = useState<UserDiagnostic | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Busca do localStorage ou dos diagnósticos mockados
-    const stored = localStorage.getItem(`psi_diagnostics_${user?.id}`);
+    if (!user) return;
+    const stored = localStorage.getItem(`psi_diagnostics_${user.id}`);
     if (stored) {
-      const parsed: UserDiagnostic[] = JSON.parse(stored);
-      const found = parsed.find(d => d.id === diagId);
-      if (found) {
-        setDiagnostic(found);
-        return;
-      }
+      try {
+        const parsed: UserDiagnostic[] = JSON.parse(stored);
+        const found = parsed.find(d => d.id === diagId);
+        if (found) {
+          setDiagnostic(found);
+          setLoading(false);
+          return;
+        }
+      } catch {}
     }
 
-    const fallback = INITIAL_DIAGNOSTICS.find(d => d.id === diagId) || INITIAL_DIAGNOSTICS[0];
-    setDiagnostic(fallback);
+    setDiagnostic(null);
+    setLoading(false);
   }, [diagId, user]);
 
-  if (!diagnostic) {
+  if (loading) {
     return (
       <div className="text-center py-12">
         <p className="text-warm-700">Carregando diagnóstico...</p>
+      </div>
+    );
+  }
+
+  if (!diagnostic) {
+    return (
+      <div className="bg-white rounded-3xl p-10 text-center border border-brand-100 space-y-4 max-w-lg mx-auto">
+        <Award className="w-10 h-10 text-warm-300 mx-auto" />
+        <h3 className="text-base font-bold text-warm-900 font-heading">Diagnóstico não encontrado</h3>
+        <p className="text-xs text-warm-700">
+          Não localizamos este diagnóstico no seu histórico. Ele pode ter sido reiniciado ou ainda não foi concluído.
+        </p>
+        <Link
+          href="/quizzes"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl brand-gradient text-white text-xs font-bold shadow-md hover:opacity-95 transition-all"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Ver Quizzes Disponíveis</span>
+        </Link>
       </div>
     );
   }

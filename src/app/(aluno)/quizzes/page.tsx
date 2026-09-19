@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { getStoredQuizzes, INITIAL_DIAGNOSTICS } from '@/lib/mockData';
+import { getStoredQuizzes } from '@/lib/mockData';
 import { Quiz, UserDiagnostic } from '@/types/database';
 import { FileCheck2, CheckCircle2, Clock, ArrowRight, Filter } from 'lucide-react';
 
@@ -25,10 +25,10 @@ export default function QuizzesListPage() {
         const parsed = JSON.parse(storedDiags);
         ids = parsed.map((d: UserDiagnostic) => d.quiz_id);
       } catch {
-        ids = INITIAL_DIAGNOSTICS.map((d) => d.quiz_id);
+        ids = [];
       }
     } else {
-      ids = INITIAL_DIAGNOSTICS.map((d) => d.quiz_id);
+      ids = [];
     }
 
     if (tempResult && !ids.includes('quiz-temperamento')) {

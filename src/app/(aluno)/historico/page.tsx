@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { INITIAL_DIAGNOSTICS } from '@/lib/mockData';
 import { UserDiagnostic } from '@/types/database';
 import { History, Award, ArrowRight, Calendar, Sparkles } from 'lucide-react';
 
@@ -12,11 +11,16 @@ export default function HistoricoPage() {
   const [diagnostics, setDiagnostics] = useState<UserDiagnostic[]>([]);
 
   useEffect(() => {
-    const storedDiags = localStorage.getItem(`psi_diagnostics_${user?.id}`);
+    if (!user) return;
+    const storedDiags = localStorage.getItem(`psi_diagnostics_${user.id}`);
     if (storedDiags) {
-      setDiagnostics(JSON.parse(storedDiags));
+      try {
+        setDiagnostics(JSON.parse(storedDiags));
+      } catch {
+        setDiagnostics([]);
+      }
     } else {
-      setDiagnostics(INITIAL_DIAGNOSTICS);
+      setDiagnostics([]);
     }
   }, [user]);
 

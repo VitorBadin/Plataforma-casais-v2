@@ -2,42 +2,6 @@ import { Profile, Quiz, Question, DiagnosticRule, ResourceItem, UserDiagnostic, 
 
 export const INITIAL_PROFILES: Profile[] = [
   {
-    id: 'prof-1',
-    user_id: 'usr-1',
-    nome: 'Mariana Silva',
-    email: 'mariana@exemplo.com',
-    status_acesso: 'ativo',
-    role: 'aluno',
-    criado_em: '2026-08-15T10:00:00Z',
-  },
-  {
-    id: 'prof-2',
-    user_id: 'usr-2',
-    nome: 'Carlos Eduardo',
-    email: 'carlos@exemplo.com',
-    status_acesso: 'ativo',
-    role: 'aluno',
-    criado_em: '2026-08-18T14:30:00Z',
-  },
-  {
-    id: 'prof-3',
-    user_id: 'usr-3',
-    nome: 'Fernanda Lima',
-    email: 'fernanda@exemplo.com',
-    status_acesso: 'pendente',
-    role: 'aluno',
-    criado_em: '2026-09-01T09:15:00Z',
-  },
-  {
-    id: 'prof-4',
-    user_id: 'usr-4',
-    nome: 'Lucas Mendes',
-    email: 'lucas@exemplo.com',
-    status_acesso: 'pendente',
-    role: 'aluno',
-    criado_em: '2026-09-04T16:20:00Z',
-  },
-  {
     id: 'prof-admin',
     user_id: 'usr-admin',
     nome: 'Dra. Elaine Souza',
@@ -275,58 +239,10 @@ export const INITIAL_RESOURCES: ResourceItem[] = [
   },
 ];
 
-export const INITIAL_DIAGNOSTICS: UserDiagnostic[] = [
-  {
-    id: 'diag-1',
-    user_id: 'usr-1',
-    quiz_id: 'quiz-1',
-    pontuacao_total: 10,
-    titulo_resultado: 'Comunicação Funcional com Pontos de Vulnerabilidade',
-    resultado_texto: 'Seu diagnóstico demonstra que existe um canal de diálogo aberto, porém ainda há momentos de hesitação ou ruídos na expressão de necessidades mais profundas...',
-    gerado_em: '2026-08-28T16:00:00Z',
-    quiz_titulo: 'Mapeamento da Saúde da Comunicação no Relacionamento',
-  },
-  {
-    id: 'diag-carlos-1',
-    user_id: 'usr-2',
-    quiz_id: 'quiz-1',
-    pontuacao_total: 14,
-    titulo_resultado: 'Alta Conexão e Diálogo Empático',
-    resultado_texto: 'Suas respostas indicam um nível elevado de segurança emocional e abertura no diálogo cotidiano.',
-    gerado_em: '2026-08-29T11:00:00Z',
-    quiz_titulo: 'Mapeamento da Saúde da Comunicação no Relacionamento',
-  },
-  {
-    id: 'diag-carlos-temp',
-    user_id: 'usr-2',
-    quiz_id: 'quiz-temperamento',
-    pontuacao_total: 18,
-    titulo_resultado: 'Sanguíneo (Intensidade: Forte) com Secundário Colérico',
-    resultado_texto: 'Perfil predominantemente comunicativo, entusiasmado e caloroso, com capacidade de iniciativa.',
-    gerado_em: '2026-09-02T14:00:00Z',
-    quiz_titulo: 'Teste de Temperamento',
-  },
-  {
-    id: 'diag-carlos-idioma',
-    user_id: 'usr-2',
-    quiz_id: 'quiz-idioma-amor',
-    pontuacao_total: 35,
-    titulo_resultado: 'Tempo de Qualidade (35%) & Toque Físico (25%)',
-    resultado_texto: 'Sente-se amado principalmente através de momentos dedicados de presença atenta e gestos de carinho.',
-    gerado_em: '2026-09-11T16:00:00Z',
-    quiz_titulo: 'Seu Idioma do Amor',
-  },
-];
+export const INITIAL_DIAGNOSTICS: UserDiagnostic[] = [];
 
-// Vínculo inicial demonstrativo: Mariana Silva (usr-1) e Carlos Eduardo (usr-2)
-export const INITIAL_COUPLES: Couple[] = [
-  {
-    id: 'couple-1',
-    user_id_1: 'usr-1',
-    user_id_2: 'usr-2',
-    criado_em: '2026-08-20T10:00:00Z',
-  },
-];
+// Vínculo inicial de casais vazio
+export const INITIAL_COUPLES: Couple[] = [];
 
 // Tabela de orientações do parceiro vazia por padrão
 export const INITIAL_PARTNER_GUIDANCE: PartnerGuidance[] = [];
@@ -339,7 +255,22 @@ export const getStoredProfiles = (): Profile[] => {
     localStorage.setItem('psi_profiles', JSON.stringify(INITIAL_PROFILES));
     return INITIAL_PROFILES;
   }
-  return JSON.parse(stored);
+  try {
+    const parsed: Profile[] = JSON.parse(stored);
+    // Limpa contas antigas de teste se existirem
+    const filtered = parsed.filter(p => !p.email.endsWith('@exemplo.com'));
+    // Garante que o perfil da Dra. Elaine admin sempre exista
+    if (!filtered.some(p => p.role === 'admin' || p.email === 'elaine@psielainesouza.com.br')) {
+      filtered.push(INITIAL_PROFILES[0]);
+    }
+    if (filtered.length !== parsed.length) {
+      localStorage.setItem('psi_profiles', JSON.stringify(filtered));
+    }
+    return filtered;
+  } catch {
+    localStorage.setItem('psi_profiles', JSON.stringify(INITIAL_PROFILES));
+    return INITIAL_PROFILES;
+  }
 };
 
 export const saveStoredProfiles = (profiles: Profile[]) => {
@@ -356,7 +287,13 @@ export const getStoredCouples = (): Couple[] => {
     return INITIAL_COUPLES;
   }
   try {
-    return JSON.parse(stored);
+    const parsed: Couple[] = JSON.parse(stored);
+    // Remove casais vinculados a usuários inexistentes/fictícios de teste
+    const filtered = parsed.filter(c => c.id !== 'couple-1');
+    if (filtered.length !== parsed.length) {
+      localStorage.setItem('psi_couples', JSON.stringify(filtered));
+    }
+    return filtered;
   } catch {
     localStorage.setItem('psi_couples', JSON.stringify(INITIAL_COUPLES));
     return INITIAL_COUPLES;

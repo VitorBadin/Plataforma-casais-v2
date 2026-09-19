@@ -30,19 +30,6 @@ export default function Navbar() {
   const isPending = user.status_acesso === 'pendente';
   const isBlocked = user.status_acesso === 'bloqueado';
 
-  const handleDevRoleSwitch = (targetRole: 'aluno' | 'admin' | 'pendente') => {
-    if (targetRole === 'admin') {
-      login('elaine@psielainesouza.com.br');
-      router.push('/admin');
-    } else if (targetRole === 'pendente') {
-      login('fernanda@exemplo.com');
-      router.push('/pendente');
-    } else {
-      login('mariana@exemplo.com');
-      router.push('/dashboard');
-    }
-  };
-
   const studentLinks = [
     { href: '/dashboard', label: 'Início', icon: LayoutDashboard },
     { href: '/quizzes', label: 'Quizzes', icon: FileCheck2 },
@@ -62,36 +49,14 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-brand-100 shadow-sm">
-      {/* Top Banner do Psicólogo com Seletor Rápido para Testes */}
-      <div className="bg-gradient-to-r from-brand-900 via-brand-600 to-brand-500 text-white text-xs py-1.5 px-4 flex flex-wrap items-center justify-between gap-2">
+      {/* Top Banner da Psicóloga */}
+      <div className="bg-gradient-to-r from-brand-900 via-brand-600 to-brand-500 text-white text-xs py-1.5 px-4 flex items-center justify-between">
         <div className="flex items-center gap-2 font-medium">
           <HeartHandshake className="w-4 h-4 text-brand-200" />
-          <span>Mentoria de Relacionamento & Casal — Psi Elaine Souza</span>
+          <span>Mentoria de Relacionamento & Casal — Dra. Elaine Souza</span>
         </div>
-        
-        {/* Quick Role Switcher for Testing */}
-        <div className="flex items-center gap-2 bg-black/20 rounded-full px-2.5 py-0.5 text-[11px]">
-          <span className="text-brand-100 font-medium">Alternar Perfil:</span>
-          <button 
-            onClick={() => handleDevRoleSwitch('aluno')} 
-            className={`px-2 py-0.5 rounded ${user.email === 'mariana@exemplo.com' ? 'bg-white text-brand-700 font-bold' : 'hover:underline text-white'}`}
-          >
-            Aluna Ativa
-          </button>
-          <span>|</span>
-          <button 
-            onClick={() => handleDevRoleSwitch('pendente')} 
-            className={`px-2 py-0.5 rounded ${user.email === 'fernanda@exemplo.com' ? 'bg-white text-brand-700 font-bold' : 'hover:underline text-white'}`}
-          >
-            Aluna Pendente
-          </button>
-          <span>|</span>
-          <button 
-            onClick={() => handleDevRoleSwitch('admin')} 
-            className={`px-2 py-0.5 rounded ${isAdmin ? 'bg-white text-brand-700 font-bold' : 'hover:underline text-white'}`}
-          >
-            Painel Admin
-          </button>
+        <div className="text-[11px] text-brand-100 hidden sm:block">
+          Espaço Clínico & Terapêutico
         </div>
       </div>
 

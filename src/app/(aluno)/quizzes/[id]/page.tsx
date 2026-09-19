@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { getStoredQuizzes, INITIAL_DIAGNOSTIC_RULES, INITIAL_DIAGNOSTICS } from '@/lib/mockData';
+import { getStoredQuizzes, INITIAL_DIAGNOSTIC_RULES } from '@/lib/mockData';
 import { Quiz, Question, UserDiagnostic } from '@/types/database';
 import { calculateQuizDiagnostic } from '@/lib/diagnosticEngine';
 import { ArrowLeft, ArrowRight, CheckCircle2, HeartHandshake, Sparkles } from 'lucide-react';

@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { INITIAL_DIAGNOSTICS } from '@/lib/mockData';
 import { UserDiagnostic, PartnerGuidance } from '@/types/database';
 import { TemperamentoResult } from '@/types/temperamentoTypes';
 import { IdiomaAmorResult } from '@/types/idiomaAmorTypes';
@@ -70,14 +69,13 @@ export default function SpouseQuizSummaryCard({ quizId, className = '' }: Spouse
         } catch {}
       }
 
-      // Procura nos diagnósticos mockados / do storage do cônjuge
-      const storedDiags = JSON.parse(
+      // Procura nos diagnósticos salvos do cônjuge
+      const storedDiags: UserDiagnostic[] = JSON.parse(
         localStorage.getItem(`psi_diagnostics_${spouseId}`) ||
         localStorage.getItem(`psi_diagnostics_${spouseUserId}`) ||
         '[]'
       );
-      const allDiags = [...storedDiags, ...INITIAL_DIAGNOSTICS];
-      const foundDiag = allDiags.find(
+      const foundDiag = storedDiags.find(
         (d: UserDiagnostic) =>
           (d.user_id === spouseId || d.user_id === spouseUserId) &&
           (d.quiz_id === 'quiz-temperamento' || d.titulo_resultado?.toLowerCase().includes('temperamento'))
@@ -118,13 +116,12 @@ export default function SpouseQuizSummaryCard({ quizId, className = '' }: Spouse
         } catch {}
       }
 
-      const storedDiags = JSON.parse(
+      const storedDiags: UserDiagnostic[] = JSON.parse(
         localStorage.getItem(`psi_diagnostics_${spouseId}`) ||
         localStorage.getItem(`psi_diagnostics_${spouseUserId}`) ||
         '[]'
       );
-      const allDiags = [...storedDiags, ...INITIAL_DIAGNOSTICS];
-      const foundDiag = allDiags.find(
+      const foundDiag = storedDiags.find(
         (d: UserDiagnostic) =>
           (d.user_id === spouseId || d.user_id === spouseUserId) &&
           (d.quiz_id === 'quiz-idioma-amor' || d.titulo_resultado?.toLowerCase().includes('idioma'))
@@ -146,13 +143,12 @@ export default function SpouseQuizSummaryCard({ quizId, className = '' }: Spouse
     }
 
     // 3. Quizzes Padrão
-    const storedDiags = JSON.parse(
+    const storedDiags: UserDiagnostic[] = JSON.parse(
       localStorage.getItem(`psi_diagnostics_${spouseId}`) ||
       localStorage.getItem(`psi_diagnostics_${spouseUserId}`) ||
       '[]'
     );
-    const allDiags = [...storedDiags, ...INITIAL_DIAGNOSTICS];
-    const foundDiag = allDiags.find(
+    const foundDiag = storedDiags.find(
       (d: UserDiagnostic) =>
         (d.user_id === spouseId || d.user_id === spouseUserId) && d.quiz_id === quizId
     );

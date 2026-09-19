@@ -9,8 +9,8 @@ import { HeartHandshake, Lock, Mail, ArrowRight, Sparkles, ShieldCheck } from 'l
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  const [email, setEmail] = useState('mariana@exemplo.com');
-  const [password, setPassword] = useState('123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -35,13 +35,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleQuickLogin = (demoEmail: string, targetPath: string) => {
-    setEmail(demoEmail);
-    login(demoEmail).then(() => {
-      router.push(targetPath);
-    });
   };
 
   return (
@@ -139,36 +132,8 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Botões de Acesso Rápido para Demonstração do Avaliador */}
-      <div className="mt-8 bg-brand-50/70 border border-brand-200/80 rounded-2xl p-4 text-center">
-        <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-brand-800 mb-2">
-          <Sparkles className="w-4 h-4 text-brand-600" />
-          <span>Atalhos de Acesso Rápido para Demonstração:</span>
-        </div>
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <button
-            onClick={() => handleQuickLogin('mariana@exemplo.com', '/dashboard')}
-            className="p-2 bg-white rounded-xl border border-brand-200 font-semibold text-brand-700 hover:bg-brand-50 transition-colors shadow-xs"
-          >
-            Aluna Ativa
-          </button>
-          <button
-            onClick={() => handleQuickLogin('fernanda@exemplo.com', '/pendente')}
-            className="p-2 bg-white rounded-xl border border-brand-200 font-semibold text-amber-700 hover:bg-amber-50 transition-colors shadow-xs"
-          >
-            Aluna Pendente
-          </button>
-          <button
-            onClick={() => handleQuickLogin('elaine@psielainesouza.com.br', '/admin')}
-            className="p-2 bg-white rounded-xl border border-brand-200 font-semibold text-warm-900 hover:bg-warm-100 transition-colors shadow-xs"
-          >
-            Psicóloga (Admin)
-          </button>
-        </div>
-      </div>
-
       {/* Aviso de Privacidade */}
-      <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-warm-700 text-center">
+      <div className="mt-6 flex items-center justify-center gap-1.5 text-[11px] text-warm-700 text-center">
         <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
         <span>Seus dados e respostas são estritamente confidenciais e individuais.</span>
       </div>

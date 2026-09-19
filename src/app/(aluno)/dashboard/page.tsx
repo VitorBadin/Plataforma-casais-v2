@@ -6,8 +6,6 @@ import { useAuth } from '@/context/AuthContext';
 import { 
   getStoredQuizzes, 
   getStoredResources,
-  INITIAL_DIAGNOSTICS, 
-  INITIAL_RESOURCES 
 } from '@/lib/mockData';
 import { Quiz, UserDiagnostic, ResourceItem } from '@/types/database';
 import { 
@@ -46,12 +44,12 @@ export default function StudentDashboard() {
         setDiagnostics(parsed);
         ids = parsed.map((d: UserDiagnostic) => d.quiz_id);
       } catch {
-        setDiagnostics(INITIAL_DIAGNOSTICS);
-        ids = INITIAL_DIAGNOSTICS.map((d) => d.quiz_id);
+        setDiagnostics([]);
+        ids = [];
       }
     } else {
-      setDiagnostics(INITIAL_DIAGNOSTICS);
-      ids = INITIAL_DIAGNOSTICS.map((d) => d.quiz_id);
+      setDiagnostics([]);
+      ids = [];
     }
 
     if (tempResult && !ids.includes('quiz-temperamento')) {
