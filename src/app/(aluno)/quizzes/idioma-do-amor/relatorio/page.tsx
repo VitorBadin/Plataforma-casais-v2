@@ -28,6 +28,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import SpouseQuizSummaryCard from '@/components/SpouseQuizSummaryCard';
+import LoveLanguageCoupleSection from '@/components/LoveLanguageCoupleSection';
 
 export default function IdiomaAmorRelatorioPage() {
   const { user, getSpouse } = useAuth();
@@ -488,9 +489,9 @@ export default function IdiomaAmorRelatorioPage() {
       </div>
 
       {/* ============================================================ */}
-      {/* VÍNCULO DE CASAL — RESULTADO DO CÔNJUGE & ORIENTAÇÕES */}
+      {/* VÍNCULO DE CASAL — RESULTADO DO CÔNJUGE & 25 COMBINAÇÕES */}
       {/* ============================================================ */}
-      <SpouseQuizSummaryCard quizId="quiz-idioma-amor" />
+      <LoveLanguageCoupleSection userPrimaryLanguage={resultado.idioma_primario} />
     </div>
   );
 }

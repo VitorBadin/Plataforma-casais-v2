@@ -469,6 +469,37 @@ CREATE POLICY "Admin gerencia orientacoes conjugais" ON public.partner_guidance
   FOR ALL USING (public.is_admin());
 
 -- ========================================================
+-- TABELA DE COMBINAÇÕES DE CASAIS (5x5 GRID - IDIOMAS DO AMOR)
+-- ========================================================
+
+-- 18. TABELA DE CONTEÚDO COMBINADO PARA CASAIS (love_language_couple_content)
+CREATE TABLE IF NOT EXISTS public.love_language_couple_content (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  idioma_pessoa TEXT NOT NULL CHECK (idioma_pessoa IN ('palavras_afirmacao', 'atos_servico', 'toque_fisico', 'tempo_qualidade', 'presentes', 'palavras', 'servico', 'toque', 'tempo')),
+  idioma_conjuge TEXT NOT NULL CHECK (idioma_conjuge IN ('palavras_afirmacao', 'atos_servico', 'toque_fisico', 'tempo_qualidade', 'presentes', 'palavras', 'servico', 'toque', 'tempo')),
+  nivel_compatibilidade TEXT NOT NULL,
+  mapa_compatibilidade TEXT NOT NULL,
+  ponto_forte TEXT NOT NULL,
+  desafio_principal TEXT NOT NULL,
+  reflexao_relacional TEXT NOT NULL,
+  acoes_concretas TEXT NOT NULL,
+  resumo TEXT NOT NULL,
+  criado_em TIMESTAMPTZ DEFAULT now(),
+  CONSTRAINT unique_idioma_pessoa_conjuge UNIQUE (idioma_pessoa, idioma_conjuge)
+);
+
+CREATE INDEX IF NOT EXISTS idx_love_couple_combo ON public.love_language_couple_content(idioma_pessoa, idioma_conjuge);
+
+ALTER TABLE public.love_language_couple_content ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Leitura autenticada de combinacoes de casal" ON public.love_language_couple_content
+  FOR SELECT USING (public.is_ativo() OR public.is_admin());
+
+CREATE POLICY "Admin gerencia combinacoes de casal" ON public.love_language_couple_content
+  FOR ALL USING (public.is_admin());
+
+
+-- ========================================================
 -- BUCKET DE STORAGE SUPABASE (PDFs e Materiais)
 -- ========================================================
 -- Executar no painel do Supabase Storage ou via SQL:
