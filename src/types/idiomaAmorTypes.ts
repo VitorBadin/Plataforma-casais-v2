@@ -68,16 +68,20 @@ export interface IdiomaAmorAnswer {
   idioma_atribuido: IdiomaAmor;
 }
 
-/** Estrutura base de relatório (Parte 2) */
+/** Snippet para composição dinâmica do idioma secundário */
+export interface IdiomaSecundarioSnippet {
+  idioma: IdiomaAmor;
+  label: string;
+  descricaoQuandoSecundario: string; // ex: "ouve elogios sinceros, reconhecimento e palavras de encorajamento"
+  necessidadeExpressao: string;      // ex: "VALIDAÇÃO VERBAL"
+}
+
+/** Estrutura do Relatório Clínico Completo por Idioma Primário (Parte 2) */
 export interface LoveLanguageReportData {
   idioma: IdiomaAmor;
   titulo: string;
-  tagline: string;
-  em_preparacao?: boolean;
-  resumo?: string;
-  secoes?: {
-    titulo: string;
-    conteudo: string;
-  }[];
-  atualizado_em?: string;
+  oQueSignifica: string;
+  comoSenteAmor: string[];
+  comportamentosDemonstra: string[];
+  importanciaIdioma: string;
 }
