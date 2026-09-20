@@ -329,38 +329,43 @@ export const saveStoredPartnerGuidance = (guidance: PartnerGuidance[]) => {
 
 export const getStoredQuizzes = (): Quiz[] => {
   if (typeof window === 'undefined') return INITIAL_QUIZZES;
+  const deletedIds: string[] = JSON.parse(localStorage.getItem('psi_deleted_quizzes') || '[]');
+  const deletedSet = new Set(deletedIds);
+
   const stored = localStorage.getItem('psi_quizzes');
   if (!stored) {
-    localStorage.setItem('psi_quizzes', JSON.stringify(INITIAL_QUIZZES));
-    return INITIAL_QUIZZES;
+    const initial = INITIAL_QUIZZES.filter(q => !deletedSet.has(q.id));
+    localStorage.setItem('psi_quizzes', JSON.stringify(initial));
+    return initial;
   }
   try {
     const parsed: Quiz[] = JSON.parse(stored);
-    const existingIds = new Set(parsed.map((q) => q.id));
-    let hasChanges = false;
-
-    // Garante que novos quizzes padrão (como quiz-temperamento) entrem na lista
-    for (const initQuiz of INITIAL_QUIZZES) {
-      if (!existingIds.has(initQuiz.id)) {
-        parsed.unshift(initQuiz);
-        hasChanges = true;
-      }
-    }
-
-    if (hasChanges) {
-      localStorage.setItem('psi_quizzes', JSON.stringify(parsed));
-    }
-    return parsed;
+    return parsed.filter(q => !deletedSet.has(q.id));
   } catch {
-    localStorage.setItem('psi_quizzes', JSON.stringify(INITIAL_QUIZZES));
-    return INITIAL_QUIZZES;
+    const initial = INITIAL_QUIZZES.filter(q => !deletedSet.has(q.id));
+    localStorage.setItem('psi_quizzes', JSON.stringify(initial));
+    return initial;
   }
 };
 
 export const saveStoredQuizzes = (quizzes: Quiz[]) => {
   if (typeof window !== 'undefined') {
-    localStorage.setItem('psi_quizzes', JSON.stringify(quizzes));
+    const deletedIds: string[] = JSON.parse(localStorage.getItem('psi_deleted_quizzes') || '[]');
+    const deletedSet = new Set(deletedIds);
+    const filtered = quizzes.filter(q => !deletedSet.has(q.id));
+    localStorage.setItem('psi_quizzes', JSON.stringify(filtered));
   }
+};
+
+export const deleteStoredQuiz = (id: string) => {
+  if (typeof window === 'undefined') return;
+  const deletedIds: string[] = JSON.parse(localStorage.getItem('psi_deleted_quizzes') || '[]');
+  if (!deletedIds.includes(id)) {
+    deletedIds.push(id);
+    localStorage.setItem('psi_deleted_quizzes', JSON.stringify(deletedIds));
+  }
+  const current = getStoredQuizzes().filter(q => q.id !== id);
+  localStorage.setItem('psi_quizzes', JSON.stringify(current));
 };
 
 export const getStoredResources = (): ResourceItem[] => {

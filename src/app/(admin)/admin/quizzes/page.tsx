@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getStoredQuizzes, saveStoredQuizzes } from '@/lib/mockData';
+import { getStoredQuizzes, saveStoredQuizzes, deleteStoredQuiz } from '@/lib/mockData';
 import { Quiz } from '@/types/database';
 import { FileCheck2, Plus, Trash2, Edit3, ArrowRight, CheckCircle2 } from 'lucide-react';
 
@@ -15,9 +15,8 @@ export default function AdminQuizzesListPage() {
 
   const handleDelete = (id: string) => {
     if (confirm('Tem certeza que deseja excluir este quiz?')) {
-      const updated = quizzes.filter(q => q.id !== id);
-      setQuizzes(updated);
-      saveStoredQuizzes(updated);
+      deleteStoredQuiz(id);
+      setQuizzes(getStoredQuizzes());
     }
   };
 
