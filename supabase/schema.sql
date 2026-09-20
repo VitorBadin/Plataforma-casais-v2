@@ -533,6 +533,108 @@ CREATE POLICY "Exclusao de materiais por admin" ON storage.objects
     bucket_id = 'materiais' 
     AND (public.is_admin() OR auth.role() = 'authenticated')
   );
+-- ========================================================
+-- RPC FUNCTIONS: GESTÃO DE ACESSOS E VÍNCULO DE CASAIS
+-- ========================================================
 
+-- Atualização de status de acesso
+CREATE OR REPLACE FUNCTION public.update_user_access_status(p_user_id text, p_status text)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  UPDATE public.profiles
+  SET status_acesso = p_status
+  WHERE id::text = p_user_id OR user_id::text = p_user_id OR email = p_user_id;
+END;
+$$;
 
+-- Vínculo seguro de casal com resolução de UUID de auth
+CREATE OR REPLACE FUNCTION public.link_couple(p_user_1 text, p_user_2 text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_uid1 uuid;
+  v_uid2 uuid;
+  v_couple_id uuid;
+BEGIN
+  SELECT user_id INTO v_uid1
+  FROM public.profiles
+  WHERE id::text = p_user_1 OR user_id::text = p_user_1 OR email = p_user_1
+  LIMIT 1;
+
+  IF v_uid1 IS NULL THEN
+    BEGIN
+      v_uid1 := p_user_1::uuid;
+    EXCEPTION WHEN OTHERS THEN
+      RAISE EXCEPTION 'Usuário 1 não encontrado ou inválido: %', p_user_1;
+    END;
+  END IF;
+
+  SELECT user_id INTO v_uid2
+  FROM public.profiles
+  WHERE id::text = p_user_2 OR user_id::text = p_user_2 OR email = p_user_2
+  LIMIT 1;
+
+  IF v_uid2 IS NULL THEN
+    BEGIN
+      v_uid2 := p_user_2::uuid;
+    EXCEPTION WHEN OTHERS THEN
+      RAISE EXCEPTION 'Usuário 2 não encontrado ou inválido: %', p_user_2;
+    END;
+  END IF;
+
+  IF v_uid1 = v_uid2 THEN
+    RAISE EXCEPTION 'Não é possível vincular um usuário a si mesmo.';
+  END IF;
+
+  -- Remove vínculos anteriores
+  DELETE FROM public.couples
+  WHERE user_id_1 IN (v_uid1, v_uid2) OR user_id_2 IN (v_uid1, v_uid2);
+
+  -- Cria novo vínculo mútuo
+  INSERT INTO public.couples (user_id_1, user_id_2)
+  VALUES (v_uid1, v_uid2)
+  RETURNING id INTO v_couple_id;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'couple_id', v_couple_id,
+    'user_id_1', v_uid1,
+    'user_id_2', v_uid2
+  );
+END;
+$$;
+
+-- Desvinculação segura de casal
+CREATE OR REPLACE FUNCTION public.unlink_couple(p_user text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_uid uuid;
+BEGIN
+  SELECT user_id INTO v_uid
+  FROM public.profiles
+  WHERE id::text = p_user OR user_id::text = p_user OR email = p_user
+  LIMIT 1;
+
+  IF v_uid IS NULL THEN
+    BEGIN
+      v_uid := p_user::uuid;
+    EXCEPTION WHEN OTHERS THEN
+      RAISE EXCEPTION 'Usuário não encontrado ou inválido: %', p_user;
+    END;
+  END IF;
+
+  DELETE FROM public.couples
+  WHERE user_id_1 = v_uid OR user_id_2 = v_uid;
+
+  RETURN jsonb_build_object('success', true);
+END;
+$$;
 

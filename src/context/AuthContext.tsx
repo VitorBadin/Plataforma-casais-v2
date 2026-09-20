@@ -397,14 +397,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const getSpouseCouple = (userId: string): Couple | null => {
-    return couples.find(c => c.user_id_1 === userId || c.user_id_2 === userId) || null;
+    if (!userId) return null;
+    const p = profiles.find(prof => prof.id === userId || prof.user_id === userId);
+    const authId = p?.user_id || userId;
+    const profId = p?.id || userId;
+
+    return (
+      couples.find(
+        c =>
+          c.user_id_1 === authId ||
+          c.user_id_2 === authId ||
+          c.user_id_1 === profId ||
+          c.user_id_2 === profId ||
+          c.user_id_1 === userId ||
+          c.user_id_2 === userId
+      ) || null
+    );
   };
 
   const getSpouse = (userId: string): Profile | null => {
     const couple = getSpouseCouple(userId);
     if (!couple) return null;
-    const spouseId = couple.user_id_1 === userId ? couple.user_id_2 : couple.user_id_1;
-    return profiles.find(p => p.id === spouseId || p.user_id === spouseId) || null;
+    const p = profiles.find(prof => prof.id === userId || prof.user_id === userId);
+    const authId = p?.user_id || userId;
+    const profId = p?.id || userId;
+
+    const spouseKey =
+      couple.user_id_1 === authId || couple.user_id_1 === profId || couple.user_id_1 === userId
+        ? couple.user_id_2
+        : couple.user_id_1;
+
+    return profiles.find(prof => prof.id === spouseKey || prof.user_id === spouseKey) || null;
   };
 
   const linkCouple = async (userId1: string, userId2: string): Promise<{ success: boolean; error?: string }> => {
@@ -412,29 +435,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: false, error: 'Não é possível vincular um usuário a si mesmo.' };
     }
 
+    const p1 = profiles.find(p => p.id === userId1 || p.user_id === userId1);
+    const p2 = profiles.find(p => p.id === userId2 || p.user_id === userId2);
+
+    const authId1 = p1?.user_id || userId1;
+    const authId2 = p2?.user_id || userId2;
+
+    if (authId1 === authId2) {
+      return { success: false, error: 'Não é possível vincular um usuário a si mesmo.' };
+    }
+
     const supabase = createClient();
     if (supabase) {
       try {
-        // Remove vínculos anteriores
-        await supabase.from('couples').delete().or(`user_id_1.eq.${userId1},user_id_2.eq.${userId1},user_id_1.eq.${userId2},user_id_2.eq.${userId2}`);
-        await supabase.from('couples').insert({
-          user_id_1: userId1,
-          user_id_2: userId2,
+        // Tenta primeiro via RPC link_couple no Supabase (com SECURITY DEFINER)
+        const { data: rpcData, error: rpcErr } = await supabase.rpc('link_couple', {
+          p_user_1: authId1,
+          p_user_2: authId2,
         });
-      } catch (err) {
-        console.warn('Erro ao vincular casal no Supabase:', err);
+
+        if (rpcErr) {
+          console.warn('Tentando fallback direto de link_couple:', rpcErr.message);
+          // Remove vínculos anteriores
+          await supabase
+            .from('couples')
+            .delete()
+            .or(`user_id_1.eq.${authId1},user_id_2.eq.${authId1},user_id_1.eq.${authId2},user_id_2.eq.${authId2}`);
+
+          const { error: insErr } = await supabase.from('couples').insert({
+            user_id_1: authId1,
+            user_id_2: authId2,
+          });
+
+          if (insErr) {
+            console.error('Erro ao vincular casal no Supabase:', insErr);
+            return { success: false, error: insErr.message || 'Erro ao persistir vínculo no banco de dados.' };
+          }
+        }
+      } catch (err: any) {
+        console.error('Erro ao vincular casal no Supabase:', err);
+        return { success: false, error: err.message || 'Erro ao vincular casal no Supabase.' };
       }
     }
 
     const cleaned = couples.filter(
-      c => c.user_id_1 !== userId1 && c.user_id_2 !== userId1 &&
-           c.user_id_1 !== userId2 && c.user_id_2 !== userId2
+      c =>
+        c.user_id_1 !== authId1 &&
+        c.user_id_2 !== authId1 &&
+        c.user_id_1 !== authId2 &&
+        c.user_id_2 !== authId2 &&
+        c.user_id_1 !== userId1 &&
+        c.user_id_2 !== userId1 &&
+        c.user_id_1 !== userId2 &&
+        c.user_id_2 !== userId2
     );
 
     const newCouple: Couple = {
       id: `couple-${Date.now()}`,
-      user_id_1: userId1,
-      user_id_2: userId2,
+      user_id_1: authId1,
+      user_id_2: authId2,
       criado_em: new Date().toISOString(),
     };
 
@@ -442,22 +501,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     saveStoredCouples(updated);
     setCouples(updated);
 
+    await refreshProfiles();
     return { success: true };
   };
 
-  const unlinkCouple = async (userId: string): Promise<{ success: boolean }> => {
+  const unlinkCouple = async (userId: string): Promise<{ success: boolean; error?: string }> => {
+    const p = profiles.find(prof => prof.id === userId || prof.user_id === userId);
+    const authId = p?.user_id || userId;
+
     const supabase = createClient();
     if (supabase) {
       try {
-        await supabase.from('couples').delete().or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`);
-      } catch (err) {
-        console.warn('Erro ao desvincular casal no Supabase:', err);
+        const { error: rpcErr } = await supabase.rpc('unlink_couple', {
+          p_user: authId,
+        });
+
+        if (rpcErr) {
+          console.warn('Tentando fallback direto de unlink_couple:', rpcErr.message);
+          await supabase.from('couples').delete().or(`user_id_1.eq.${authId},user_id_2.eq.${authId}`);
+        }
+      } catch (err: any) {
+        console.error('Erro ao desvincular casal no Supabase:', err);
       }
     }
 
-    const updated = couples.filter(c => c.user_id_1 !== userId && c.user_id_2 !== userId);
+    const updated = couples.filter(
+      c =>
+        c.user_id_1 !== authId &&
+        c.user_id_2 !== authId &&
+        c.user_id_1 !== userId &&
+        c.user_id_2 !== userId
+    );
     saveStoredCouples(updated);
     setCouples(updated);
+
+    await refreshProfiles();
     return { success: true };
   };
 

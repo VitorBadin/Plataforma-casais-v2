@@ -59,11 +59,16 @@ export default function AdminUsuariosPage() {
     setModalFeedback(null);
   };
 
+  const [isSubmittingCouple, setIsSubmittingCouple] = useState(false);
+
   const handleLinkCouple = async () => {
     if (!selectedProfileForCouple || !targetSpouseId) return;
-    const res = await linkCouple(selectedProfileForCouple.id, targetSpouseId);
+    setIsSubmittingCouple(true);
+    const myId = selectedProfileForCouple.user_id || selectedProfileForCouple.id;
+    const res = await linkCouple(myId, targetSpouseId);
+    setIsSubmittingCouple(false);
     if (res.success) {
-      setModalFeedback({ type: 'success', message: 'Vínculo mútuo de casal estabelecido com sucesso!' });
+      setModalFeedback({ type: 'success', message: 'Vínculo mútuo de casal estabelecido e salvo com sucesso!' });
       setTimeout(() => {
         handleCloseCoupleModal();
       }, 1200);
@@ -74,7 +79,9 @@ export default function AdminUsuariosPage() {
 
   const handleUnlinkCouple = async (userId: string) => {
     if (!window.confirm('Deseja realmente desfazer o vínculo deste casal?')) return;
+    setIsSubmittingCouple(true);
     await unlinkCouple(userId);
+    setIsSubmittingCouple(false);
     setModalFeedback({ type: 'success', message: 'Vínculo de casal desfeito com sucesso.' });
     setTimeout(() => {
       handleCloseCoupleModal();
@@ -343,11 +350,12 @@ export default function AdminUsuariosPage() {
 
                       <button
                         type="button"
-                        onClick={() => handleUnlinkCouple(selectedProfileForCouple.id)}
-                        className="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-colors inline-flex items-center gap-1.5"
+                        disabled={isSubmittingCouple}
+                        onClick={() => handleUnlinkCouple(selectedProfileForCouple.user_id || selectedProfileForCouple.id)}
+                        className="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-colors inline-flex items-center gap-1.5 disabled:opacity-50"
                       >
                         <Unlink className="w-3.5 h-3.5" />
-                        <span>Desfazer Vínculo</span>
+                        <span>{isSubmittingCouple ? 'Desfazendo...' : 'Desfazer Vínculo'}</span>
                       </button>
                     </div>
                   </div>
@@ -375,13 +383,14 @@ export default function AdminUsuariosPage() {
                     <select
                       value={targetSpouseId}
                       onChange={(e) => setTargetSpouseId(e.target.value)}
+                      disabled={isSubmittingCouple}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-warm-200 bg-rose-soft/40 text-warm-900 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
                     >
                       <option value="">Selecione um aluno(a)...</option>
                       {availableSpouses.map((other) => {
                         const otherSpouse = getSpouse(other.id) || getSpouse(other.user_id);
                         return (
-                          <option key={other.id} value={other.id}>
+                          <option key={other.id} value={other.user_id || other.id}>
                             {other.nome} ({other.email}) {otherSpouse ? `[Já vinculado(a) com ${otherSpouse.nome}]` : ''}
                           </option>
                         );
@@ -392,20 +401,21 @@ export default function AdminUsuariosPage() {
                   <div className="flex items-center justify-end gap-2 pt-2">
                     <button
                       type="button"
+                      disabled={isSubmittingCouple}
                       onClick={handleCloseCoupleModal}
-                      className="px-4 py-2 rounded-xl bg-warm-100 hover:bg-warm-200 text-warm-800 text-xs font-semibold transition-colors"
+                      className="px-4 py-2 rounded-xl bg-warm-100 hover:bg-warm-200 text-warm-800 text-xs font-semibold transition-colors disabled:opacity-50"
                     >
                       Cancelar
                     </button>
 
                     <button
                       type="button"
-                      disabled={!targetSpouseId}
+                      disabled={!targetSpouseId || isSubmittingCouple}
                       onClick={handleLinkCouple}
                       className="px-4 py-2 rounded-xl brand-gradient text-white text-xs font-bold shadow-xs hover:opacity-95 disabled:opacity-50 transition-all inline-flex items-center gap-1.5"
                     >
                       <HeartHandshake className="w-3.5 h-3.5" />
-                      <span>Vincular Cônjuge</span>
+                      <span>{isSubmittingCouple ? 'Vinculando...' : 'Vincular Cônjuge'}</span>
                     </button>
                   </div>
                 </div>
