@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { createClient } from '@/lib/supabase/client';
 import { IDIOMA_AMOR_META } from '@/lib/idiomaAmorData';
 import {
   getLoveLanguageReport,
@@ -38,20 +39,106 @@ export default function IdiomaAmorRelatorioPage() {
   const spouseName = spouse ? spouse.nome : 'Não vinculado';
 
   useEffect(() => {
-    if (!user) return;
-    const storageKey = `psi_idioma_amor_result_${user.id}`;
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
-      try {
-        setResultado(JSON.parse(stored));
-      } catch {
-        setResultado(null);
+    let isMounted = true;
+
+    async function loadReportData() {
+      if (!user) return;
+      const authUserId = user.user_id || user.id;
+
+      // 1. Tenta do localStorage
+      const stored =
+        localStorage.getItem(`psi_idioma_amor_result_${user.id}`) ||
+        localStorage.getItem(`psi_idioma_amor_result_${authUserId}`);
+
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (isMounted) {
+            setResultado(parsed);
+          }
+
+          // Auto-sincroniza com Supabase em background caso o resultado ainda não estivesse no banco
+          const supabase = createClient();
+          if (supabase && parsed.idioma_primario) {
+            supabase
+              .from('quiz_love_language_results')
+              .upsert(
+                {
+                  user_id: authUserId,
+                  palavras_pct: Math.round(parsed.percentuais?.palavras || parsed.pontuacoes?.palavras || 0),
+                  tempo_pct: Math.round(parsed.percentuais?.tempo || parsed.pontuacoes?.tempo || 0),
+                  presentes_pct: Math.round(parsed.percentuais?.presentes || parsed.pontuacoes?.presentes || 0),
+                  servico_pct: Math.round(parsed.percentuais?.servico || parsed.pontuacoes?.servico || 0),
+                  toque_pct: Math.round(parsed.percentuais?.toque || parsed.pontuacoes?.toque || 0),
+                  idioma_primario: parsed.idioma_primario,
+                  idioma_secundario: parsed.idioma_secundario || 'palavras',
+                  calculado_em: parsed.calculado_em || new Date().toISOString(),
+                },
+                { onConflict: 'user_id' }
+              )
+              .then(() => {});
+          }
+          return;
+        } catch {}
       }
-    } else {
-      // Fallback padrão demonstrativo para visualização direta caso acesse a rota sem ter feito o quiz
+
+      // 2. Busca do Supabase
+      const supabase = createClient();
+      if (supabase) {
+        try {
+          const { data: dbData } = await supabase
+            .from('quiz_love_language_results')
+            .select('*')
+            .or(`user_id.eq.${authUserId},user_id.eq.${user.id}`)
+            .order('calculado_em', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (dbData && isMounted) {
+            const mapped: IdiomaAmorResult = {
+              id: dbData.id,
+              user_id: dbData.user_id,
+              idioma_primario: dbData.idioma_primario as IdiomaAmor,
+              idioma_secundario: dbData.idioma_secundario as IdiomaAmor,
+              pontuacoes: {
+                palavras: dbData.palavras_pct || 0,
+                tempo: dbData.tempo_pct || 0,
+                presentes: dbData.presentes_pct || 0,
+                servico: dbData.servico_pct || 0,
+                toque: dbData.toque_pct || 0,
+              },
+              percentuais: {
+                palavras: dbData.palavras_pct || 0,
+                tempo: dbData.tempo_pct || 0,
+                presentes: dbData.presentes_pct || 0,
+                servico: dbData.servico_pct || 0,
+                toque: dbData.toque_pct || 0,
+              },
+              distribuicao_ordenada: [
+                { idioma: 'palavras' as IdiomaAmor, label: 'Palavras de Afirmação', emoji: '💬', pontos: dbData.palavras_pct || 0, percentual: dbData.palavras_pct || 0 },
+                { idioma: 'tempo' as IdiomaAmor, label: 'Tempo de Qualidade', emoji: '⏳', pontos: dbData.tempo_pct || 0, percentual: dbData.tempo_pct || 0 },
+                { idioma: 'presentes' as IdiomaAmor, label: 'Receber Presentes', emoji: '🎁', pontos: dbData.presentes_pct || 0, percentual: dbData.presentes_pct || 0 },
+                { idioma: 'servico' as IdiomaAmor, label: 'Atos de Serviço', emoji: '🛠️', pontos: dbData.servico_pct || 0, percentual: dbData.servico_pct || 0 },
+                { idioma: 'toque' as IdiomaAmor, label: 'Toque Físico', emoji: '🫂', pontos: dbData.toque_pct || 0, percentual: dbData.toque_pct || 0 },
+              ].sort((a, b) => b.percentual - a.percentual),
+              frase_resumo: `Idioma Predominante: ${IDIOMA_AMOR_META[dbData.idioma_primario as IdiomaAmor]?.label || dbData.idioma_primario}`,
+              calculado_em: dbData.calculado_em,
+            };
+
+            setResultado(mapped);
+            localStorage.setItem(`psi_idioma_amor_result_${user.id}`, JSON.stringify(mapped));
+            localStorage.setItem(`psi_idioma_amor_result_${authUserId}`, JSON.stringify(mapped));
+            return;
+          }
+        } catch (err) {
+          console.warn('Erro ao carregar do Supabase:', err);
+        }
+      }
+
+      // Fallback padrão se ainda não respondeu
       const fallback: IdiomaAmorResult = {
         id: 'idioma-preview',
-        user_id: user?.id || 'anon',
+        user_id: authUserId,
         idioma_primario: 'tempo',
         idioma_secundario: 'palavras',
         pontuacoes: {
@@ -75,11 +162,17 @@ export default function IdiomaAmorRelatorioPage() {
           { idioma: 'toque', label: 'Toque Físico', emoji: '🫂', pontos: 3, percentual: 15 },
           { idioma: 'presentes', label: 'Receber Presentes', emoji: '🎁', pontos: 1, percentual: 5 },
         ],
-        frase_resumo: 'Seu idioma primário é Tempo de Qualidade (35%) com segundo destaque em Palavras de Afirmação (25%)',
+        frase_resumo: 'Linguagem Predominante: Tempo de Qualidade (35%)',
         calculado_em: new Date().toISOString(),
       };
-      setResultado(fallback);
+      if (isMounted) setResultado(fallback);
     }
+
+    loadReportData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   if (!resultado) {

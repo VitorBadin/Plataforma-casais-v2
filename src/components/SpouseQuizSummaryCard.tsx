@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { createClient } from '@/lib/supabase/client';
 import { UserDiagnostic, PartnerGuidance } from '@/types/database';
-import { TemperamentoResult } from '@/types/temperamentoTypes';
-import { IdiomaAmorResult } from '@/types/idiomaAmorTypes';
+import { TemperamentoResult, Temperamento } from '@/types/temperamentoTypes';
+import { IdiomaAmorResult, IdiomaAmor } from '@/types/idiomaAmorTypes';
 import { TEMPERAMENTO_META } from '@/lib/temperamentoData';
 import { IDIOMA_AMOR_META } from '@/lib/idiomaAmorData';
 import {
@@ -41,50 +42,226 @@ export default function SpouseQuizSummaryCard({ quizId, className = '' }: Spouse
   const spouse = user ? getSpouse(user.id) || getSpouse(user.user_id) : null;
 
   useEffect(() => {
-    if (!spouse) {
-      setSpouseData(null);
-      return;
-    }
+    let isMounted = true;
 
-    const spouseId = spouse.id;
-    const spouseUserId = spouse.user_id;
-
-    // 1. Caso seja Quiz de Temperamento
-    if (quizId === 'quiz-temperamento') {
-      const storedTemp =
-        localStorage.getItem(`psi_temperamento_result_${spouseId}`) ||
-        localStorage.getItem(`psi_temperamento_result_${spouseUserId}`);
-
-      if (storedTemp) {
-        try {
-          const parsed: TemperamentoResult = JSON.parse(storedTemp);
-          setSpouseData({
-            hasAnswered: true,
-            chave: parsed.temperamento_primario,
-            titulo: `Temperamento Predominante: ${TEMPERAMENTO_META[parsed.temperamento_primario]?.label || parsed.temperamento_primario}`,
-            resumo: `Secundário: ${TEMPERAMENTO_META[parsed.temperamento_secundario]?.label || parsed.temperamento_secundario} (${parsed.intensidade_primario || 'Equilibrado'})`,
-            temperamentoResult: parsed,
-          });
-          return;
-        } catch {}
+    async function fetchSpouseQuizData() {
+      if (!spouse) {
+        if (isMounted) setSpouseData(null);
+        return;
       }
 
-      // Procura nos diagnósticos salvos do cônjuge
+      const spouseProfId = spouse.id;
+      const spouseAuthId = spouse.user_id || spouse.id;
+      const spouseIds = [spouseAuthId, spouseProfId].filter(Boolean);
+      const supabase = createClient();
+
+      // 1. Caso seja Quiz de Temperamento
+      if (quizId === 'quiz-temperamento') {
+        if (supabase) {
+          try {
+            const { data: dbTemp } = await supabase
+              .from('quiz_temperamento_results')
+              .select('*')
+              .in('user_id', spouseIds)
+              .order('calculado_em', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (dbTemp && isMounted) {
+              const prim = dbTemp.temperamento_primario as Temperamento;
+              const sec = dbTemp.temperamento_secundario as Temperamento;
+              const mappedTemp: TemperamentoResult = {
+                id: dbTemp.id,
+                user_id: dbTemp.user_id,
+                temperamento_primario: prim,
+                intensidade_primario: dbTemp.intensidade_primario || 'Forte',
+                temperamento_secundario: sec,
+                intensidade_secundario: dbTemp.intensidade_secundario || 'Moderado',
+                pontuacoes: {
+                  colerico: dbTemp.colerico_pontos || 0,
+                  sanguineo: dbTemp.sanguineo_pontos || 0,
+                  melancolico: dbTemp.melancolico_pontos || 0,
+                  fleumatico: dbTemp.fleumatico_pontos || 0,
+                },
+                frase_resumo: '',
+                calculado_em: dbTemp.calculado_em,
+              };
+
+              setSpouseData({
+                hasAnswered: true,
+                chave: prim,
+                titulo: `Temperamento Predominante: ${TEMPERAMENTO_META[prim]?.label || prim}`,
+                resumo: `Secundário: ${TEMPERAMENTO_META[sec]?.label || sec} (${dbTemp.intensidade_primario || 'Equilibrado'})`,
+                temperamentoResult: mappedTemp,
+              });
+              return;
+            }
+          } catch (err) {
+            console.warn('Erro ao carregar temperamento do cônjuge no Supabase:', err);
+          }
+        }
+
+        const storedTemp =
+          localStorage.getItem(`psi_temperamento_result_${spouseProfId}`) ||
+          localStorage.getItem(`psi_temperamento_result_${spouseAuthId}`);
+
+        if (storedTemp) {
+          try {
+            const parsed: TemperamentoResult = JSON.parse(storedTemp);
+            if (isMounted) {
+              setSpouseData({
+                hasAnswered: true,
+                chave: parsed.temperamento_primario,
+                titulo: `Temperamento Predominante: ${TEMPERAMENTO_META[parsed.temperamento_primario]?.label || parsed.temperamento_primario}`,
+                resumo: `Secundário: ${TEMPERAMENTO_META[parsed.temperamento_secundario]?.label || parsed.temperamento_secundario} (${parsed.intensidade_primario || 'Equilibrado'})`,
+                temperamentoResult: parsed,
+              });
+            }
+            return;
+          } catch {}
+        }
+
+        // Procura nos diagnósticos salvos do cônjuge
+        const storedDiags: UserDiagnostic[] = JSON.parse(
+          localStorage.getItem(`psi_diagnostics_${spouseProfId}`) ||
+          localStorage.getItem(`psi_diagnostics_${spouseAuthId}`) ||
+          '[]'
+        );
+        const foundDiag = storedDiags.find(
+          (d: UserDiagnostic) =>
+            (d.user_id === spouseProfId || d.user_id === spouseAuthId) &&
+            (d.quiz_id === 'quiz-temperamento' || d.titulo_resultado?.toLowerCase().includes('temperamento'))
+        );
+
+        if (foundDiag && isMounted) {
+          setSpouseData({
+            hasAnswered: true,
+            chave: 'sanguineo',
+            titulo: foundDiag.titulo_resultado,
+            resumo: foundDiag.resultado_texto,
+            diagnostic: foundDiag,
+          });
+          return;
+        }
+
+        if (isMounted) setSpouseData({ hasAnswered: false });
+        return;
+      }
+
+      // 2. Caso seja Quiz do Idioma do Amor
+      if (quizId === 'quiz-idioma-amor') {
+        if (supabase) {
+          try {
+            const { data: dbIdioma } = await supabase
+              .from('quiz_love_language_results')
+              .select('*')
+              .in('user_id', spouseIds)
+              .order('calculado_em', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (dbIdioma && isMounted) {
+              const prim = dbIdioma.idioma_primario as IdiomaAmor;
+              const sec = dbIdioma.idioma_secundario as IdiomaAmor;
+              const mappedIdioma: IdiomaAmorResult = {
+                id: dbIdioma.id,
+                user_id: dbIdioma.user_id,
+                idioma_primario: prim,
+                idioma_secundario: sec,
+                pontuacoes: {
+                  palavras: dbIdioma.palavras_pct || 0,
+                  tempo: dbIdioma.tempo_pct || 0,
+                  presentes: dbIdioma.presentes_pct || 0,
+                  servico: dbIdioma.servico_pct || 0,
+                  toque: dbIdioma.toque_pct || 0,
+                },
+                percentuais: {
+                  palavras: dbIdioma.palavras_pct || 0,
+                  tempo: dbIdioma.tempo_pct || 0,
+                  presentes: dbIdioma.presentes_pct || 0,
+                  servico: dbIdioma.servico_pct || 0,
+                  toque: dbIdioma.toque_pct || 0,
+                },
+                distribuicao_ordenada: [],
+                frase_resumo: '',
+                calculado_em: dbIdioma.calculado_em,
+              };
+
+              setSpouseData({
+                hasAnswered: true,
+                chave: prim,
+                titulo: `Linguagem Primária: ${IDIOMA_AMOR_META[prim]?.label || prim} (${dbIdioma.palavras_pct || dbIdioma.percentuais?.[prim] || 0}%)`,
+                resumo: `Secundária: ${IDIOMA_AMOR_META[sec]?.label || sec}`,
+                idiomaResult: mappedIdioma,
+              });
+              return;
+            }
+          } catch (err) {
+            console.warn('Erro ao carregar idioma do cônjuge no Supabase:', err);
+          }
+        }
+
+        const storedIdioma =
+          localStorage.getItem(`psi_idioma_amor_result_${spouseProfId}`) ||
+          localStorage.getItem(`psi_idioma_amor_result_${spouseAuthId}`);
+
+        if (storedIdioma) {
+          try {
+            const parsed: IdiomaAmorResult = JSON.parse(storedIdioma);
+            if (isMounted) {
+              setSpouseData({
+                hasAnswered: true,
+                chave: parsed.idioma_primario,
+                titulo: `Linguagem Primária: ${IDIOMA_AMOR_META[parsed.idioma_primario]?.label || parsed.idioma_primario} (${parsed.percentuais?.[parsed.idioma_primario] || 0}%)`,
+                resumo: `Secundária: ${IDIOMA_AMOR_META[parsed.idioma_secundario]?.label || parsed.idioma_secundario} (${parsed.percentuais?.[parsed.idioma_secundario] || 0}%)`,
+                idiomaResult: parsed,
+              });
+            }
+            return;
+          } catch {}
+        }
+
+        const storedDiags: UserDiagnostic[] = JSON.parse(
+          localStorage.getItem(`psi_diagnostics_${spouseProfId}`) ||
+          localStorage.getItem(`psi_diagnostics_${spouseAuthId}`) ||
+          '[]'
+        );
+        const foundDiag = storedDiags.find(
+          (d: UserDiagnostic) =>
+            (d.user_id === spouseProfId || d.user_id === spouseAuthId) &&
+            (d.quiz_id === 'quiz-idioma-amor' || d.titulo_resultado?.toLowerCase().includes('idioma'))
+        );
+
+        if (foundDiag && isMounted) {
+          setSpouseData({
+            hasAnswered: true,
+            chave: 'tempo',
+            titulo: foundDiag.titulo_resultado,
+            resumo: foundDiag.resultado_texto,
+            diagnostic: foundDiag,
+          });
+          return;
+        }
+
+        if (isMounted) setSpouseData({ hasAnswered: false });
+        return;
+      }
+
+      // 3. Quizzes Padrão
       const storedDiags: UserDiagnostic[] = JSON.parse(
-        localStorage.getItem(`psi_diagnostics_${spouseId}`) ||
-        localStorage.getItem(`psi_diagnostics_${spouseUserId}`) ||
+        localStorage.getItem(`psi_diagnostics_${spouseProfId}`) ||
+        localStorage.getItem(`psi_diagnostics_${spouseAuthId}`) ||
         '[]'
       );
       const foundDiag = storedDiags.find(
         (d: UserDiagnostic) =>
-          (d.user_id === spouseId || d.user_id === spouseUserId) &&
-          (d.quiz_id === 'quiz-temperamento' || d.titulo_resultado?.toLowerCase().includes('temperamento'))
+          (d.user_id === spouseProfId || d.user_id === spouseAuthId) && d.quiz_id === quizId
       );
 
-      if (foundDiag) {
+      if (foundDiag && isMounted) {
         setSpouseData({
           hasAnswered: true,
-          chave: 'sanguineo',
+          chave: foundDiag.titulo_resultado,
           titulo: foundDiag.titulo_resultado,
           resumo: foundDiag.resultado_texto,
           diagnostic: foundDiag,
@@ -92,79 +269,14 @@ export default function SpouseQuizSummaryCard({ quizId, className = '' }: Spouse
         return;
       }
 
-      setSpouseData({ hasAnswered: false });
-      return;
+      if (isMounted) setSpouseData({ hasAnswered: false });
     }
 
-    // 2. Caso seja Quiz do Idioma do Amor
-    if (quizId === 'quiz-idioma-amor') {
-      const storedIdioma =
-        localStorage.getItem(`psi_idioma_amor_result_${spouseId}`) ||
-        localStorage.getItem(`psi_idioma_amor_result_${spouseUserId}`);
+    fetchSpouseQuizData();
 
-      if (storedIdioma) {
-        try {
-          const parsed: IdiomaAmorResult = JSON.parse(storedIdioma);
-          setSpouseData({
-            hasAnswered: true,
-            chave: parsed.idioma_primario,
-            titulo: `Linguagem Primária: ${IDIOMA_AMOR_META[parsed.idioma_primario]?.label || parsed.idioma_primario} (${parsed.percentuais?.[parsed.idioma_primario] || 0}%)`,
-            resumo: `Secundária: ${IDIOMA_AMOR_META[parsed.idioma_secundario]?.label || parsed.idioma_secundario} (${parsed.percentuais?.[parsed.idioma_secundario] || 0}%)`,
-            idiomaResult: parsed,
-          });
-          return;
-        } catch {}
-      }
-
-      const storedDiags: UserDiagnostic[] = JSON.parse(
-        localStorage.getItem(`psi_diagnostics_${spouseId}`) ||
-        localStorage.getItem(`psi_diagnostics_${spouseUserId}`) ||
-        '[]'
-      );
-      const foundDiag = storedDiags.find(
-        (d: UserDiagnostic) =>
-          (d.user_id === spouseId || d.user_id === spouseUserId) &&
-          (d.quiz_id === 'quiz-idioma-amor' || d.titulo_resultado?.toLowerCase().includes('idioma'))
-      );
-
-      if (foundDiag) {
-        setSpouseData({
-          hasAnswered: true,
-          chave: 'tempo',
-          titulo: foundDiag.titulo_resultado,
-          resumo: foundDiag.resultado_texto,
-          diagnostic: foundDiag,
-        });
-        return;
-      }
-
-      setSpouseData({ hasAnswered: false });
-      return;
-    }
-
-    // 3. Quizzes Padrão
-    const storedDiags: UserDiagnostic[] = JSON.parse(
-      localStorage.getItem(`psi_diagnostics_${spouseId}`) ||
-      localStorage.getItem(`psi_diagnostics_${spouseUserId}`) ||
-      '[]'
-    );
-    const foundDiag = storedDiags.find(
-      (d: UserDiagnostic) =>
-        (d.user_id === spouseId || d.user_id === spouseUserId) && d.quiz_id === quizId
-    );
-
-    if (foundDiag) {
-      setSpouseData({
-        hasAnswered: true,
-        chave: foundDiag.titulo_resultado,
-        titulo: foundDiag.titulo_resultado,
-        resumo: foundDiag.resultado_texto,
-        diagnostic: foundDiag,
-      });
-      return;
-    }
-
-    setSpouseData({ hasAnswered: false });
+    return () => {
+      isMounted = false;
+    };
   }, [spouse, quizId]);
 
   // Busca orientação em partnerGuidanceList caso haja chave

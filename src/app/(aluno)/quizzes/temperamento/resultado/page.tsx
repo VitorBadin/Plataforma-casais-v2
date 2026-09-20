@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { createClient } from '@/lib/supabase/client';
 import { TEMPERAMENTO_META } from '@/lib/temperamentoData';
-import { TemperamentoResult } from '@/types/temperamentoTypes';
-import { Temperamento } from '@/types/temperamentoTypes';
+import { TemperamentoResult, Temperamento } from '@/types/temperamentoTypes';
 import {
   Award,
   ArrowLeft,
@@ -37,16 +37,75 @@ export default function TemperamentoResultadoPage() {
   const [resultado, setResultado] = useState<TemperamentoResult | null>(null);
 
   useEffect(() => {
-    if (!user) return;
-    const storageKey = `psi_temperamento_result_${user.id}`;
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
-      try {
-        setResultado(JSON.parse(stored));
-      } catch {
-        setResultado(null);
+    let isMounted = true;
+
+    async function loadResult() {
+      if (!user) return;
+      const authUserId = user.user_id || user.id;
+
+      // 1. Tenta do localStorage
+      const stored =
+        localStorage.getItem(`psi_temperamento_result_${user.id}`) ||
+        localStorage.getItem(`psi_temperamento_result_${authUserId}`);
+
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (isMounted) {
+            setResultado(parsed);
+            return;
+          }
+        } catch {}
+      }
+
+      // 2. Busca do Supabase
+      const supabase = createClient();
+      if (supabase) {
+        try {
+          const { data: dbData } = await supabase
+            .from('quiz_temperamento_results')
+            .select('*')
+            .or(`user_id.eq.${authUserId},user_id.eq.${user.id}`)
+            .order('calculado_em', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (dbData && isMounted) {
+            const prim = dbData.temperamento_primario as Temperamento;
+            const sec = dbData.temperamento_secundario as Temperamento;
+            const mapped: TemperamentoResult = {
+              id: dbData.id,
+              user_id: dbData.user_id,
+              temperamento_primario: prim,
+              intensidade_primario: dbData.intensidade_primario || 'Forte',
+              temperamento_secundario: sec,
+              intensidade_secundario: dbData.intensidade_secundario || 'Moderado',
+              pontuacoes: {
+                colerico: dbData.colerico_pontos || 0,
+                sanguineo: dbData.sanguineo_pontos || 0,
+                melancolico: dbData.melancolico_pontos || 0,
+                fleumatico: dbData.fleumatico_pontos || 0,
+              },
+              frase_resumo: `Temperamento Predominante: ${TEMPERAMENTO_META[prim]?.label || prim}`,
+              calculado_em: dbData.calculado_em,
+            };
+
+            setResultado(mapped);
+            localStorage.setItem(`psi_temperamento_result_${user.id}`, JSON.stringify(mapped));
+            localStorage.setItem(`psi_temperamento_result_${authUserId}`, JSON.stringify(mapped));
+            return;
+          }
+        } catch (err) {
+          console.warn('Erro ao carregar temperamento do Supabase:', err);
+        }
       }
     }
+
+    loadResult();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   if (!resultado) {

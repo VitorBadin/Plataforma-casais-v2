@@ -4,10 +4,12 @@ import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { createClient } from '@/lib/supabase/client';
 import { calcularIdiomaAmor } from '@/lib/idiomaAmorEngine';
 import {
   IDIOMA_AMOR_PERGUNTAS,
   IDIOMA_AMOR_META,
+  OPCAO_PARA_IDIOMA,
   TOTAL_PERGUNTAS_IDIOMA_AMOR,
   INTRODUCAO_IDIOMA_AMOR,
 } from '@/lib/idiomaAmorData';
@@ -67,26 +69,75 @@ export default function IdiomaAmorQuizPage() {
     if (!user) return;
     setIsSubmitting(true);
 
-    const resultado = calcularIdiomaAmor(answers, user.id);
+    const authUserId = user.user_id || user.id;
+    const resultado = calcularIdiomaAmor(answers, authUserId);
 
-    // Persiste resultado no localStorage
-    const storageKey = `psi_idioma_amor_result_${user.id}`;
-    localStorage.setItem(storageKey, JSON.stringify(resultado));
+    // 1. Sincroniza e persiste no Supabase (se conectado)
+    const supabase = createClient();
+    if (supabase) {
+      try {
+        const { error: resErr } = await supabase
+          .from('quiz_love_language_results')
+          .upsert(
+            {
+              user_id: authUserId,
+              palavras_pct: Math.round(resultado.percentuais.palavras || 0),
+              tempo_pct: Math.round(resultado.percentuais.tempo || 0),
+              presentes_pct: Math.round(resultado.percentuais.presentes || 0),
+              servico_pct: Math.round(resultado.percentuais.servico || 0),
+              toque_pct: Math.round(resultado.percentuais.toque || 0),
+              idioma_primario: resultado.idioma_primario,
+              idioma_secundario: resultado.idioma_secundario,
+              calculado_em: resultado.calculado_em,
+            },
+            { onConflict: 'user_id' }
+          );
+
+        if (resErr) {
+          // Se onConflict der fallback para insert direto
+          await supabase.from('quiz_love_language_results').insert({
+            user_id: authUserId,
+            palavras_pct: Math.round(resultado.percentuais.palavras || 0),
+            tempo_pct: Math.round(resultado.percentuais.tempo || 0),
+            presentes_pct: Math.round(resultado.percentuais.presentes || 0),
+            servico_pct: Math.round(resultado.percentuais.servico || 0),
+            toque_pct: Math.round(resultado.percentuais.toque || 0),
+            idioma_primario: resultado.idioma_primario,
+            idioma_secundario: resultado.idioma_secundario,
+            calculado_em: resultado.calculado_em,
+          });
+        }
+
+        // Salva respostas detalhadas
+        const answersPayload = Object.entries(answers).map(([qNum, letra]) => ({
+          user_id: authUserId,
+          question_number: parseInt(qNum, 10),
+          opcao_escolhida: letra,
+          idioma_atribuido: OPCAO_PARA_IDIOMA[letra] || 'tempo',
+        }));
+
+        await supabase.from('quiz_love_language_answers').delete().eq('user_id', authUserId);
+        await supabase.from('quiz_love_language_answers').insert(answersPayload);
+      } catch (err) {
+        console.warn('Persistindo localmente (fallback):', err);
+      }
+    }
+
+    // 2. Persiste resultado no localStorage (para ambos IDs: id e user_id)
+    localStorage.setItem(`psi_idioma_amor_result_${user.id}`, JSON.stringify(resultado));
+    localStorage.setItem(`psi_idioma_amor_result_${authUserId}`, JSON.stringify(resultado));
 
     // Persiste respostas individuais
-    const answersKey = `psi_idioma_amor_answers_${user.id}`;
-    localStorage.setItem(answersKey, JSON.stringify(answers));
+    localStorage.setItem(`psi_idioma_amor_answers_${user.id}`, JSON.stringify(answers));
+    localStorage.setItem(`psi_idioma_amor_answers_${authUserId}`, JSON.stringify(answers));
 
     // Sincroniza com diagnósticos para visualização unificada no histórico
-    const diagKey = `psi_diagnostics_${user.id}`;
-    const existingDiags = JSON.parse(localStorage.getItem(diagKey) || '[]');
-    
     const primarioMeta = IDIOMA_AMOR_META[resultado.idioma_primario];
     const secundarioMeta = IDIOMA_AMOR_META[resultado.idioma_secundario];
 
     const idiomaDiag = {
       id: resultado.id,
-      user_id: user.id,
+      user_id: authUserId,
       quiz_id: 'quiz-idioma-amor',
       pontuacao_total: resultado.percentuais[resultado.idioma_primario],
       titulo_resultado: `${primarioMeta.label} (${resultado.percentuais[resultado.idioma_primario]}%)`,
@@ -97,13 +148,18 @@ export default function IdiomaAmorQuizPage() {
       quiz_titulo: 'Seu Idioma do Amor',
     };
 
+    const diagKey1 = `psi_diagnostics_${user.id}`;
+    const diagKey2 = `psi_diagnostics_${authUserId}`;
+    const existingDiags = JSON.parse(localStorage.getItem(diagKey1) || localStorage.getItem(diagKey2) || '[]');
+    
     const updatedDiags = [
       idiomaDiag,
       ...existingDiags.filter(
         (d: { quiz_id: string }) => d.quiz_id !== 'quiz-idioma-amor'
       ),
     ];
-    localStorage.setItem(diagKey, JSON.stringify(updatedDiags));
+    localStorage.setItem(diagKey1, JSON.stringify(updatedDiags));
+    localStorage.setItem(diagKey2, JSON.stringify(updatedDiags));
 
     setTimeout(() => {
       setIsSubmitting(false);

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { createClient } from '@/lib/supabase/client';
 import { calcularTemperamento } from '@/lib/temperamentoEngine';
 import {
   TEMPERAMENTO_PERGUNTAS,
@@ -89,22 +90,70 @@ export default function TemperamentoQuizPage() {
     if (!user) return;
     setIsSubmitting(true);
 
-    const resultado = calcularTemperamento(answers, user.id);
+    const authUserId = user.user_id || user.id;
+    const resultado = calcularTemperamento(answers, authUserId);
 
-    // Persiste resultado no localStorage
-    const storageKey = `psi_temperamento_result_${user.id}`;
-    localStorage.setItem(storageKey, JSON.stringify(resultado));
+    // Normaliza intensidade para os valores válidos do CHECK constraint ('Forte', 'Moderado', 'Equilibrado')
+    const normalizarIntensidade = (val?: string): 'Forte' | 'Moderado' | 'Equilibrado' => {
+      const lower = (val || '').toLowerCase();
+      if (lower.includes('forte')) return 'Forte';
+      if (lower.includes('moderado')) return 'Moderado';
+      return 'Equilibrado';
+    };
+
+    // 1. Sincroniza e persiste no Supabase (se conectado)
+    const supabase = createClient();
+    if (supabase) {
+      try {
+        const { error: tempErr } = await supabase
+          .from('quiz_temperamento_results')
+          .upsert(
+            {
+              user_id: authUserId,
+              colerico_pontos: Math.round(resultado.pontuacoes.colerico || 0),
+              sanguineo_pontos: Math.round(resultado.pontuacoes.sanguineo || 0),
+              melancolico_pontos: Math.round(resultado.pontuacoes.melancolico || 0),
+              fleumatico_pontos: Math.round(resultado.pontuacoes.fleumatico || 0),
+              temperamento_primario: resultado.temperamento_primario,
+              intensidade_primario: normalizarIntensidade(resultado.intensidade_primario),
+              temperamento_secundario: resultado.temperamento_secundario,
+              intensidade_secundario: normalizarIntensidade(resultado.intensidade_secundario),
+              calculado_em: resultado.calculado_em,
+            },
+            { onConflict: 'user_id' }
+          );
+
+        if (tempErr) {
+          await supabase.from('quiz_temperamento_results').insert({
+            user_id: authUserId,
+            colerico_pontos: Math.round(resultado.pontuacoes.colerico || 0),
+            sanguineo_pontos: Math.round(resultado.pontuacoes.sanguineo || 0),
+            melancolico_pontos: Math.round(resultado.pontuacoes.melancolico || 0),
+            fleumatico_pontos: Math.round(resultado.pontuacoes.fleumatico || 0),
+            temperamento_primario: resultado.temperamento_primario,
+            intensidade_primario: normalizarIntensidade(resultado.intensidade_primario),
+            temperamento_secundario: resultado.temperamento_secundario,
+            intensidade_secundario: normalizarIntensidade(resultado.intensidade_secundario),
+            calculado_em: resultado.calculado_em,
+          });
+        }
+      } catch (err) {
+        console.warn('Persistindo temperamento localmente (fallback):', err);
+      }
+    }
+
+    // 2. Persiste resultado no localStorage (para ambos IDs)
+    localStorage.setItem(`psi_temperamento_result_${user.id}`, JSON.stringify(resultado));
+    localStorage.setItem(`psi_temperamento_result_${authUserId}`, JSON.stringify(resultado));
 
     // Persiste respostas individuais
-    const answersKey = `psi_temperamento_answers_${user.id}`;
-    localStorage.setItem(answersKey, JSON.stringify(answers));
+    localStorage.setItem(`psi_temperamento_answers_${user.id}`, JSON.stringify(answers));
+    localStorage.setItem(`psi_temperamento_answers_${authUserId}`, JSON.stringify(answers));
 
     // Marca como respondido no sistema de diagnósticos para compatibilidade
-    const diagKey = `psi_diagnostics_${user.id}`;
-    const existingDiags = JSON.parse(localStorage.getItem(diagKey) || '[]');
     const tempDiag = {
       id: resultado.id,
-      user_id: user.id,
+      user_id: authUserId,
       quiz_id: 'quiz-temperamento',
       pontuacao_total: Math.max(
         resultado.pontuacoes.colerico,
@@ -118,11 +167,16 @@ export default function TemperamentoQuizPage() {
       quiz_titulo: 'Teste de Temperamento',
     };
 
+    const diagKey1 = `psi_diagnostics_${user.id}`;
+    const diagKey2 = `psi_diagnostics_${authUserId}`;
+    const existingDiags = JSON.parse(localStorage.getItem(diagKey1) || localStorage.getItem(diagKey2) || '[]');
+    
     const updatedDiags = [
       tempDiag,
       ...existingDiags.filter((d: { quiz_id: string }) => d.quiz_id !== 'quiz-temperamento'),
     ];
-    localStorage.setItem(diagKey, JSON.stringify(updatedDiags));
+    localStorage.setItem(diagKey1, JSON.stringify(updatedDiags));
+    localStorage.setItem(diagKey2, JSON.stringify(updatedDiags));
 
     setTimeout(() => {
       setIsSubmitting(false);

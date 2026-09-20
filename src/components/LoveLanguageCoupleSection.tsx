@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { IdiomaAmorResult } from '@/types/idiomaAmorTypes';
+import { createClient } from '@/lib/supabase/client';
+import { IdiomaAmorResult, IdiomaAmor } from '@/types/idiomaAmorTypes';
 import { IDIOMA_AMOR_META } from '@/lib/idiomaAmorData';
 import { getLoveLanguageCoupleCombination } from '@/lib/loveLanguageCombinationsData';
 import { LoveLanguageCoupleContent } from '@/types/loveLanguageCoupleTypes';
@@ -33,61 +34,149 @@ export default function LoveLanguageCoupleSection({
   const [spouseResult, setSpouseResult] = useState<IdiomaAmorResult | null>(null);
   const [userResult, setUserResult] = useState<IdiomaAmorResult | null>(null);
   const [combination, setCombination] = useState<LoveLanguageCoupleContent | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const spouse = user ? getSpouse(user.id) || getSpouse(user.user_id) : null;
   const spouseFirstName = spouse ? spouse.nome.trim().split(' ')[0] : '';
 
   useEffect(() => {
-    if (!user) return;
+    let isMounted = true;
 
-    // 1. Carrega resultado do usuário se não passado como prop
-    let myPrimary = userPrimaryLanguage;
-    if (!myPrimary) {
-      const myStored = localStorage.getItem(`psi_idioma_amor_result_${user.id}`);
-      if (myStored) {
+    async function loadResults() {
+      if (!user) {
+        if (isMounted) setIsLoading(false);
+        return;
+      }
+
+      const activeSpouse = getSpouse(user.id) || getSpouse(user.user_id);
+      if (!activeSpouse) {
+        if (isMounted) {
+          setSpouseResult(null);
+          setCombination(null);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      const authUserId = user.user_id || user.id;
+      const spouseAuthId = activeSpouse.user_id || activeSpouse.id;
+      const spouseProfId = activeSpouse.id;
+
+      // 1. Determina o idioma primário do usuário atual
+      let myPrimary = userPrimaryLanguage;
+      if (!myPrimary) {
+        const myStored =
+          localStorage.getItem(`psi_idioma_amor_result_${user.id}`) ||
+          localStorage.getItem(`psi_idioma_amor_result_${authUserId}`);
+        if (myStored) {
+          try {
+            const parsed: IdiomaAmorResult = JSON.parse(myStored);
+            if (isMounted) setUserResult(parsed);
+            myPrimary = parsed.idioma_primario;
+          } catch {}
+        }
+      }
+
+      const supabase = createClient();
+
+      if (!myPrimary && supabase) {
         try {
-          const parsed: IdiomaAmorResult = JSON.parse(myStored);
-          setUserResult(parsed);
-          myPrimary = parsed.idioma_primario;
-        } catch {}
+          const { data: dbUserRes } = await supabase
+            .from('quiz_love_language_results')
+            .select('*')
+            .or(`user_id.eq.${authUserId},user_id.eq.${user.id}`)
+            .order('calculado_em', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (dbUserRes) {
+            myPrimary = dbUserRes.idioma_primario as IdiomaAmor;
+          }
+        } catch (err) {
+          console.warn('Erro ao carregar idioma do usuário:', err);
+        }
+      }
+
+      // 2. Busca resultado do cônjuge: Supabase -> LocalStorage
+      let foundSpouse: IdiomaAmorResult | null = null;
+
+      if (supabase) {
+        try {
+          const spouseIds = [spouseAuthId, spouseProfId].filter(Boolean);
+          const { data: dbSpouse, error: dbErr } = await supabase
+            .from('quiz_love_language_results')
+            .select('*')
+            .in('user_id', spouseIds)
+            .order('calculado_em', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (dbSpouse) {
+            foundSpouse = {
+              id: dbSpouse.id,
+              user_id: dbSpouse.user_id,
+              idioma_primario: dbSpouse.idioma_primario as IdiomaAmor,
+              idioma_secundario: dbSpouse.idioma_secundario as IdiomaAmor,
+              pontuacoes: {
+                palavras: dbSpouse.palavras_pct || 0,
+                tempo: dbSpouse.tempo_pct || 0,
+                presentes: dbSpouse.presentes_pct || 0,
+                servico: dbSpouse.servico_pct || 0,
+                toque: dbSpouse.toque_pct || 0,
+              },
+              percentuais: {
+                palavras: dbSpouse.palavras_pct || 0,
+                tempo: dbSpouse.tempo_pct || 0,
+                presentes: dbSpouse.presentes_pct || 0,
+                servico: dbSpouse.servico_pct || 0,
+                toque: dbSpouse.toque_pct || 0,
+              },
+              distribuicao_ordenada: [],
+              frase_resumo: '',
+              calculado_em: dbSpouse.calculado_em,
+            };
+          }
+        } catch (err) {
+          console.warn('Erro ao buscar resultado do cônjuge no Supabase:', err);
+        }
+      }
+
+      // Fallback para LocalStorage se não encontrou no Supabase
+      if (!foundSpouse) {
+        const storedSpouseResult =
+          localStorage.getItem(`psi_idioma_amor_result_${spouseProfId}`) ||
+          localStorage.getItem(`psi_idioma_amor_result_${spouseAuthId}`);
+
+        if (storedSpouseResult) {
+          try {
+            foundSpouse = JSON.parse(storedSpouseResult);
+          } catch {}
+        }
+      }
+
+      if (isMounted) {
+        setSpouseResult(foundSpouse);
+
+        if (foundSpouse && myPrimary) {
+          const combo = getLoveLanguageCoupleCombination(
+            myPrimary,
+            foundSpouse.idioma_primario,
+            activeSpouse.nome
+          );
+          setCombination(combo);
+        } else {
+          setCombination(null);
+        }
+        setIsLoading(false);
       }
     }
 
-    // 2. Se não tem cônjuge, encerra
-    if (!spouse) {
-      setSpouseResult(null);
-      setCombination(null);
-      return;
-    }
+    loadResults();
 
-    // 3. Busca o resultado do cônjuge no storage / diagnósticos
-    const spouseId = spouse.id;
-    const spouseUserId = spouse.user_id;
-
-    const storedSpouseResult =
-      localStorage.getItem(`psi_idioma_amor_result_${spouseId}`) ||
-      localStorage.getItem(`psi_idioma_amor_result_${spouseUserId}`);
-
-    if (storedSpouseResult) {
-      try {
-        const parsedSpouse: IdiomaAmorResult = JSON.parse(storedSpouseResult);
-        setSpouseResult(parsedSpouse);
-
-        if (myPrimary) {
-          const combo = getLoveLanguageCoupleCombination(
-            myPrimary,
-            parsedSpouse.idioma_primario,
-            spouse.nome
-          );
-          setCombination(combo);
-        }
-        return;
-      } catch {}
-    }
-
-    setSpouseResult(null);
-    setCombination(null);
-  }, [user, spouse, userPrimaryLanguage]);
+    return () => {
+      isMounted = false;
+    };
+  }, [user, getSpouse, userPrimaryLanguage]);
 
   // Se não tem cônjuge vinculado: não exibe nada
   if (!spouse) {
