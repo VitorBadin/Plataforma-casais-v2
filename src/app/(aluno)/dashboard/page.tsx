@@ -21,16 +21,28 @@ import {
 } from 'lucide-react';
 
 export default function StudentDashboard() {
-  const { user } = useAuth();
+  const { user, quizzesList, resourcesList, refreshProfiles } = useAuth();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [diagnostics, setDiagnostics] = useState<UserDiagnostic[]>([]);
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [answeredQuizIds, setAnsweredQuizIds] = useState<string[]>([]);
 
   useEffect(() => {
-    const loadedQuizzes = getStoredQuizzes();
-    setQuizzes(loadedQuizzes);
-    setResources(getStoredResources());
+    refreshProfiles();
+  }, []);
+
+  useEffect(() => {
+    if (quizzesList && quizzesList.length > 0) {
+      setQuizzes(quizzesList);
+    } else {
+      setQuizzes(getStoredQuizzes());
+    }
+
+    if (resourcesList && resourcesList.length > 0) {
+      setResources(resourcesList);
+    } else {
+      setResources(getStoredResources());
+    }
 
     // Carrega diagnósticos salvos localmente
     const storedDiags = localStorage.getItem(`psi_diagnostics_${user?.id}`);

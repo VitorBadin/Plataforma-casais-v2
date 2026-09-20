@@ -8,13 +8,22 @@ import { Quiz, UserDiagnostic } from '@/types/database';
 import { FileCheck2, CheckCircle2, Clock, ArrowRight, Filter } from 'lucide-react';
 
 export default function QuizzesListPage() {
-  const { user } = useAuth();
+  const { user, quizzesList, refreshProfiles } = useAuth();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [answeredIds, setAnsweredIds] = useState<string[]>([]);
   const [filter, setFilter] = useState<'todos' | 'pendentes' | 'respondidos'>('todos');
 
   useEffect(() => {
-    setQuizzes(getStoredQuizzes());
+    refreshProfiles();
+  }, []);
+
+  useEffect(() => {
+    if (quizzesList && quizzesList.length > 0) {
+      setQuizzes(quizzesList);
+    } else {
+      setQuizzes(getStoredQuizzes());
+    }
+
     const storedDiags = localStorage.getItem(`psi_diagnostics_${user?.id}`);
     const tempResult = localStorage.getItem(`psi_temperamento_result_${user?.id}`);
     const idiomaResult = localStorage.getItem(`psi_idioma_amor_result_${user?.id}`);
@@ -39,7 +48,7 @@ export default function QuizzesListPage() {
     }
 
     setAnsweredIds(ids);
-  }, [user]);
+  }, [user, quizzesList]);
 
   const filteredQuizzes = quizzes.filter((q) => {
     const isAns = answeredIds.includes(q.id);

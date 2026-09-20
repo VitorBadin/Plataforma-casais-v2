@@ -1,18 +1,28 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { INITIAL_RESOURCES, getStoredResources } from '@/lib/mockData';
+import { useAuth } from '@/context/AuthContext';
+import { getStoredResources } from '@/lib/mockData';
 import { ResourceItem } from '@/types/database';
 import { BookOpen, Search, Download, ExternalLink, FileText, CheckCircle2 } from 'lucide-react';
 
 export default function BibliotecaPage() {
-  const [resources, setResources] = useState<ResourceItem[]>(INITIAL_RESOURCES);
+  const { resourcesList, refreshProfiles } = useAuth();
+  const [resources, setResources] = useState<ResourceItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
-    setResources(getStoredResources());
+    refreshProfiles();
   }, []);
+
+  useEffect(() => {
+    if (resourcesList && resourcesList.length > 0) {
+      setResources(resourcesList);
+    } else {
+      setResources(getStoredResources());
+    }
+  }, [resourcesList]);
 
   const categories = ['Todos', 'Ebooks', 'Guias Práticos', 'Exercícios & Planners'];
 

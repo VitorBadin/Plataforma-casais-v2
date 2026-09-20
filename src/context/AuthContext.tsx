@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Profile, StatusAcesso, Couple, PartnerGuidance } from '@/types/database';
+import { Profile, StatusAcesso, Couple, PartnerGuidance, Quiz, ResourceItem } from '@/types/database';
 import {
   INITIAL_PROFILES,
   getStoredProfiles,
@@ -10,7 +10,9 @@ import {
   saveStoredCouples,
   getStoredPartnerGuidance,
   saveStoredPartnerGuidance,
+  getStoredQuizzes,
   saveStoredQuizzes,
+  getStoredResources,
   saveStoredResources,
 } from '@/lib/mockData';
 import { createClient } from '@/lib/supabase/client';
@@ -25,6 +27,8 @@ interface AuthContextType {
   profilesList: Profile[];
   couples: Couple[];
   partnerGuidanceList: PartnerGuidance[];
+  quizzesList: Quiz[];
+  resourcesList: ResourceItem[];
   linkCouple: (userId1: string, userId2: string) => Promise<{ success: boolean; error?: string }>;
   unlinkCouple: (userId: string) => Promise<{ success: boolean; error?: string }>;
   getSpouse: (userId: string) => Profile | null;
@@ -40,6 +44,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [couples, setCouples] = useState<Couple[]>([]);
   const [partnerGuidanceList, setPartnerGuidanceList] = useState<PartnerGuidance[]>([]);
+  const [quizzesList, setQuizzesList] = useState<Quiz[]>([]);
+  const [resourcesList, setResourcesList] = useState<ResourceItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Carrega dados de perfis, casais, quizzes e recursos do Supabase ou LocalStorage
@@ -92,6 +98,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem('psi_resources', JSON.stringify(rList.valor));
           }
         }
+
+        setQuizzesList(getStoredQuizzes());
+        setResourcesList(getStoredResources());
         return;
       } catch (err) {
         console.warn('Fallback para dados locais:', err);
@@ -101,6 +110,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfiles(getStoredProfiles());
     setCouples(getStoredCouples());
     setPartnerGuidanceList(getStoredPartnerGuidance());
+    setQuizzesList(getStoredQuizzes());
+    setResourcesList(getStoredResources());
   };
 
   const refreshCurrentUser = async (): Promise<Profile | null> => {
@@ -576,6 +587,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profilesList: profiles,
       couples,
       partnerGuidanceList,
+      quizzesList,
+      resourcesList,
       linkCouple,
       unlinkCouple,
       getSpouse,
