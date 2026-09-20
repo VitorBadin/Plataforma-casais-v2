@@ -65,6 +65,7 @@ export default function AdminRespostasPage() {
     if (!profile) return;
     setLoadingStudentData(true);
 
+    const validIds = Array.from(new Set([profile.user_id, profile.id].filter(Boolean)));
     const authId = profile.user_id || profile.id;
     const profId = profile.id;
     const supabase = createClient();
@@ -75,13 +76,13 @@ export default function AdminRespostasPage() {
     let fetchedIdiomaAnswers: any[] = [];
     let fetchedDiagnostics: UserDiagnostic[] = [];
 
-    if (supabase) {
+    if (supabase && validIds.length > 0) {
       try {
         // 1. Busca Teste do Idioma do Amor do Supabase
-        const { data: dbIdioma } = await supabase
+        const { data: dbIdioma, error: idiomaErr } = await supabase
           .from('quiz_love_language_results')
           .select('*')
-          .or(`user_id.eq.${authId},user_id.eq.${profId}`)
+          .in('user_id', validIds)
           .order('calculado_em', { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -94,7 +95,7 @@ export default function AdminRespostasPage() {
         const { data: dbIdiomaAnswers } = await supabase
           .from('quiz_love_language_answers')
           .select('*')
-          .or(`user_id.eq.${authId},user_id.eq.${profId}`)
+          .in('user_id', validIds)
           .order('question_number', { ascending: true });
 
         if (dbIdiomaAnswers && dbIdiomaAnswers.length > 0) {
@@ -105,7 +106,7 @@ export default function AdminRespostasPage() {
         const { data: dbTemp } = await supabase
           .from('quiz_temperamento_results')
           .select('*')
-          .or(`user_id.eq.${authId},user_id.eq.${profId}`)
+          .in('user_id', validIds)
           .order('calculado_em', { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -118,7 +119,7 @@ export default function AdminRespostasPage() {
         const { data: dbTempAnswers } = await supabase
           .from('quiz_temperamento_answers')
           .select('*')
-          .or(`user_id.eq.${authId},user_id.eq.${profId}`)
+          .in('user_id', validIds)
           .order('question_number', { ascending: true });
 
         if (dbTempAnswers && dbTempAnswers.length > 0) {
@@ -129,7 +130,7 @@ export default function AdminRespostasPage() {
         const { data: dbDiags } = await supabase
           .from('user_diagnostics')
           .select('*')
-          .or(`user_id.eq.${authId},user_id.eq.${profId}`)
+          .in('user_id', validIds)
           .order('gerado_em', { ascending: false });
 
         if (dbDiags && dbDiags.length > 0) {

@@ -137,6 +137,17 @@ export default function TemperamentoQuizPage() {
             calculado_em: resultado.calculado_em,
           });
         }
+
+        // Salva respostas detalhadas no Supabase
+        const tempAnswersPayload = Object.entries(answers).map(([qNum, ans]) => ({
+          user_id: authUserId,
+          question_number: parseInt(qNum, 10),
+          resposta: typeof ans === 'object' ? JSON.stringify(ans) : String(ans),
+          pontos_atribuidos: 1,
+        }));
+
+        await supabase.from('quiz_temperamento_answers').delete().eq('user_id', authUserId);
+        await supabase.from('quiz_temperamento_answers').insert(tempAnswersPayload);
       } catch (err) {
         console.warn('Persistindo temperamento localmente (fallback):', err);
       }
