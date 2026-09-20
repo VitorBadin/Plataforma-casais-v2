@@ -1,4 +1,5 @@
 import { Profile, Quiz, Question, DiagnosticRule, ResourceItem, UserDiagnostic, Answer, Couple, PartnerGuidance } from '@/types/database';
+import { createClient } from '@/lib/supabase/client';
 
 export const INITIAL_PROFILES: Profile[] = [
   {
@@ -354,6 +355,16 @@ export const saveStoredQuizzes = (quizzes: Quiz[]) => {
     const deletedSet = new Set(deletedIds);
     const filtered = quizzes.filter(q => !deletedSet.has(q.id));
     localStorage.setItem('psi_quizzes', JSON.stringify(filtered));
+
+    try {
+      const supabase = createClient();
+      if (supabase) {
+        supabase.rpc('save_platform_setting', {
+          p_key: 'quizzes_list',
+          p_value: filtered,
+        }).then(() => {});
+      }
+    } catch {}
   }
 };
 
@@ -366,27 +377,85 @@ export const deleteStoredQuiz = (id: string) => {
   }
   const current = getStoredQuizzes().filter(q => q.id !== id);
   localStorage.setItem('psi_quizzes', JSON.stringify(current));
+
+  try {
+    const supabase = createClient();
+    if (supabase) {
+      supabase.rpc('save_platform_setting', {
+        p_key: 'quizzes_list',
+        p_value: current,
+      }).then(() => {});
+      supabase.rpc('save_platform_setting', {
+        p_key: 'deleted_quizzes',
+        p_value: deletedIds,
+      }).then(() => {});
+    }
+  } catch {}
 };
 
 export const getStoredResources = (): ResourceItem[] => {
   if (typeof window === 'undefined') return INITIAL_RESOURCES;
+  const deletedIds: string[] = JSON.parse(localStorage.getItem('psi_deleted_resources') || '[]');
+  const deletedSet = new Set(deletedIds);
+
   const stored = localStorage.getItem('psi_resources');
   if (!stored) {
-    localStorage.setItem('psi_resources', JSON.stringify(INITIAL_RESOURCES));
-    return INITIAL_RESOURCES;
+    const initial = INITIAL_RESOURCES.filter(r => !deletedSet.has(r.id));
+    localStorage.setItem('psi_resources', JSON.stringify(initial));
+    return initial;
   }
   try {
-    return JSON.parse(stored);
+    const parsed: ResourceItem[] = JSON.parse(stored);
+    return parsed.filter(r => !deletedSet.has(r.id));
   } catch {
-    localStorage.setItem('psi_resources', JSON.stringify(INITIAL_RESOURCES));
-    return INITIAL_RESOURCES;
+    const initial = INITIAL_RESOURCES.filter(r => !deletedSet.has(r.id));
+    localStorage.setItem('psi_resources', JSON.stringify(initial));
+    return initial;
   }
 };
 
 export const saveStoredResources = (resources: ResourceItem[]) => {
   if (typeof window !== 'undefined') {
-    localStorage.setItem('psi_resources', JSON.stringify(resources));
+    const deletedIds: string[] = JSON.parse(localStorage.getItem('psi_deleted_resources') || '[]');
+    const deletedSet = new Set(deletedIds);
+    const filtered = resources.filter(r => !deletedSet.has(r.id));
+    localStorage.setItem('psi_resources', JSON.stringify(filtered));
+
+    try {
+      const supabase = createClient();
+      if (supabase) {
+        supabase.rpc('save_platform_setting', {
+          p_key: 'resources_list',
+          p_value: filtered,
+        }).then(() => {});
+      }
+    } catch {}
   }
+};
+
+export const deleteStoredResource = (id: string) => {
+  if (typeof window === 'undefined') return;
+  const deletedIds: string[] = JSON.parse(localStorage.getItem('psi_deleted_resources') || '[]');
+  if (!deletedIds.includes(id)) {
+    deletedIds.push(id);
+    localStorage.setItem('psi_deleted_resources', JSON.stringify(deletedIds));
+  }
+  const current = getStoredResources().filter(r => r.id !== id);
+  localStorage.setItem('psi_resources', JSON.stringify(current));
+
+  try {
+    const supabase = createClient();
+    if (supabase) {
+      supabase.rpc('save_platform_setting', {
+        p_key: 'resources_list',
+        p_value: current,
+      }).then(() => {});
+      supabase.rpc('save_platform_setting', {
+        p_key: 'deleted_resources',
+        p_value: deletedIds,
+      }).then(() => {});
+    }
+  } catch {}
 };
 
 

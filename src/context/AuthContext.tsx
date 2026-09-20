@@ -10,6 +10,8 @@ import {
   saveStoredCouples,
   getStoredPartnerGuidance,
   saveStoredPartnerGuidance,
+  saveStoredQuizzes,
+  saveStoredResources,
 } from '@/lib/mockData';
 import { createClient } from '@/lib/supabase/client';
 
@@ -24,7 +26,7 @@ interface AuthContextType {
   couples: Couple[];
   partnerGuidanceList: PartnerGuidance[];
   linkCouple: (userId1: string, userId2: string) => Promise<{ success: boolean; error?: string }>;
-  unlinkCouple: (userId: string) => Promise<{ success: boolean }>;
+  unlinkCouple: (userId: string) => Promise<{ success: boolean; error?: string }>;
   getSpouse: (userId: string) => Profile | null;
   getSpouseCouple: (userId: string) => Couple | null;
   refreshProfiles: () => Promise<void>;
@@ -40,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [partnerGuidanceList, setPartnerGuidanceList] = useState<PartnerGuidance[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Carrega dados de perfis e casais do Supabase ou LocalStorage
+  // Carrega dados de perfis, casais, quizzes e recursos do Supabase ou LocalStorage
   const refreshProfiles = async () => {
     const supabase = createClient();
     if (supabase) {
@@ -65,6 +67,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (guidanceData) {
           setPartnerGuidanceList(guidanceData as PartnerGuidance[]);
           saveStoredPartnerGuidance(guidanceData as PartnerGuidance[]);
+        }
+
+        // Sincroniza quizzes e recursos configurados pelo Admin para todos os usuários
+        const { data: settingsData } = await supabase.from('platform_settings').select('*');
+        if (settingsData) {
+          const delQuizzes = settingsData.find(s => s.chave === 'deleted_quizzes');
+          if (delQuizzes && Array.isArray(delQuizzes.valor)) {
+            localStorage.setItem('psi_deleted_quizzes', JSON.stringify(delQuizzes.valor));
+          }
+
+          const qList = settingsData.find(s => s.chave === 'quizzes_list');
+          if (qList && Array.isArray(qList.valor)) {
+            localStorage.setItem('psi_quizzes', JSON.stringify(qList.valor));
+          }
+
+          const delResources = settingsData.find(s => s.chave === 'deleted_resources');
+          if (delResources && Array.isArray(delResources.valor)) {
+            localStorage.setItem('psi_deleted_resources', JSON.stringify(delResources.valor));
+          }
+
+          const rList = settingsData.find(s => s.chave === 'resources_list');
+          if (rList && Array.isArray(rList.valor)) {
+            localStorage.setItem('psi_resources', JSON.stringify(rList.valor));
+          }
         }
         return;
       } catch (err) {

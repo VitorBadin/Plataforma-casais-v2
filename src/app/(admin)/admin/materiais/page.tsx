@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { INITIAL_RESOURCES, getStoredResources, saveStoredResources } from '@/lib/mockData';
+import { INITIAL_RESOURCES, getStoredResources, saveStoredResources, deleteStoredResource } from '@/lib/mockData';
 import { ResourceItem } from '@/types/database';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -244,9 +244,8 @@ export default function AdminMateriaisPage() {
 
   const handleDelete = async (id: string) => {
     if (confirm('Deseja remover este material da biblioteca?')) {
-      const updated = resources.filter((r) => r.id !== id);
-      setResources(updated);
-      saveStoredResources(updated);
+      deleteStoredResource(id);
+      setResources(getStoredResources());
 
       const supabase = createClient();
       if (supabase) {
