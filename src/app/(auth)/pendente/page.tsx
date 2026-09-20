@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Clock, ShieldCheck, RefreshCw, MessageCircle, LogOut, CheckCircle2, Sparkles, Loader2 } from 'lucide-react';
+import { Clock, ShieldCheck, RefreshCw, MessageCircle, LogOut, Loader2 } from 'lucide-react';
 
 export default function PendentePage() {
   const router = useRouter();
-  const { user, updateUserStatus, logout, refreshCurrentUser } = useAuth();
+  const { user, logout, refreshCurrentUser } = useAuth();
   const [checking, setChecking] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 
@@ -52,18 +51,6 @@ export default function PendentePage() {
       setFeedback('Não foi possível verificar no momento. Tente novamente em instantes.');
     } finally {
       setChecking(false);
-    }
-  };
-
-  const handleSimulateApproval = async () => {
-    if (user) {
-      setChecking(true);
-      await updateUserStatus(user.id, 'ativo');
-      await refreshCurrentUser();
-      setFeedback('Acesso ativado com sucesso! Redirecionando...');
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 800);
     }
   };
 
@@ -139,23 +126,6 @@ export default function PendentePage() {
               </>
             )}
           </button>
-        </div>
-
-        {/* Botão de Demonstração Rápida para o Avaliador */}
-        <div className="mt-8 pt-6 border-t border-warm-100">
-          <div className="p-3 bg-brand-50 border border-brand-200 rounded-xl text-center">
-            <p className="text-xs text-brand-800 font-bold mb-2">
-              🧪 Testando a Plataforma?
-            </p>
-            <button
-              onClick={handleSimulateApproval}
-              disabled={checking}
-              className="py-2 px-4 rounded-lg bg-brand-600 text-white font-semibold text-xs shadow-xs hover:bg-brand-700 transition-colors flex items-center justify-center gap-1.5 mx-auto"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              Simular Liberação de Acesso pelo Admin
-            </button>
-          </div>
         </div>
 
         <div className="mt-6 flex justify-center">
