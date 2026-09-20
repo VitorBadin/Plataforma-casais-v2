@@ -251,8 +251,8 @@ export default function LoveLanguageCoupleSection({
   const renderFormattedSection = (text: string) => {
     // Remove cabeçalhos duplicados do texto original se houver
     const cleanText = text
-      .replace(/^[A-Z\s]+(\*{2})?\s*\n*/, '')
-      .replace(/\*\*Nível:\*\*\s*[^\n]+\n*/, '')
+      .replace(/^(REFLEXÃO RELACIONAL|AÇÕES CONCRETAS PARA O CASAL|DESAFIO PRINCIPAL|PONTO FORTE DO CASAL|MAPA DE COMPATIBILIDADE|[A-ZÀ-Ú\s]+)(\*{2})?\s*\n*/i, '')
+      .replace(/\*\*Nível:\*\*\s*[^\n]+\n*/i, '')
       .trim();
 
     const paragraphs = cleanText.split('\n\n');
