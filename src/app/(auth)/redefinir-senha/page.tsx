@@ -1,40 +1,88 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, ArrowLeft, CheckCircle2, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-export default function RedefinirSenhaPage() {
+function RedefinirSenhaContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
-  const [hasSession, setHasSession] = useState<boolean | null>(null);
+  const [sessionReady, setSessionReady] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
-    if (supabase) {
-      // Verifica se o usuário chegou através de um link de recuperação válido com sessão
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          setHasSession(true);
+    if (!supabase) {
+      setCheckingSession(false);
+      return;
+    }
+
+    const initRecoverySession = async () => {
+      try {
+        // 1. Verifica se há 'code' nos searchParams (fluxo PKCE)
+        const code = searchParams.get('code');
+        if (code) {
+          const { data, error: codeErr } = await supabase.auth.exchangeCodeForSession(code);
+          if (!codeErr && data.session) {
+            setSessionReady(true);
+            setCheckingSession(false);
+            return;
+          }
+        }
+
+        // 2. Verifica se há tokens no hash da URL (#access_token=...&refresh_token=...)
+        if (typeof window !== 'undefined' && window.location.hash) {
+          const hash = window.location.hash.substring(1);
+          const params = new URLSearchParams(hash);
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+
+          if (accessToken && refreshToken) {
+            const { data, error: hashErr } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            if (!hashErr && data.session) {
+              setSessionReady(true);
+              setCheckingSession(false);
+              return;
+            }
+          }
+        }
+
+        // 3. Verifica se já existe uma sessão ativa
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session) {
+          setSessionReady(true);
         } else {
-          // Escuta mudança de auth no caso de token hash
-          const { data } = supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'PASSWORD_RECOVERY' || !!session) {
-              setHasSession(true);
+          // Escuta eventos de recuperação de autenticação
+          const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN' || !!session) {
+              setSessionReady(true);
+              setCheckingSession(false);
             }
           });
-          return () => data.subscription.unsubscribe();
+          return () => {
+            authListener.subscription.unsubscribe();
+          };
         }
-      });
-    }
-  }, []);
+      } catch (err) {
+        console.warn('Erro ao inicializar sessão de recuperação:', err);
+      } finally {
+        setCheckingSession(false);
+      }
+    };
+
+    initRecoverySession();
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,12 +107,36 @@ export default function RedefinirSenhaPage() {
     }
 
     try {
-      const { error: updateError } = await supabase.auth.updateUser({
+      // Se não houver sessão ativa, tenta verificar se o token da URL pode ser reprocessado
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session && typeof window !== 'undefined' && window.location.hash) {
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        if (accessToken && refreshToken) {
+          await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+        }
+      }
+
+      const { data, error: updateError } = await supabase.auth.updateUser({
         password: password,
       });
 
       if (updateError) {
-        setError(updateError.message || 'Erro ao atualizar a senha. Tente solicitar um novo link.');
+        if (
+          updateError.message.includes('Auth session missing') ||
+          updateError.message.includes('session')
+        ) {
+          setError(
+            'O link de recuperação expirou ou é inválido. Por favor, solicite um novo link de redefinição de senha na tela de recuperação.'
+          );
+        } else {
+          setError(updateError.message || 'Erro ao atualizar a senha.');
+        }
       } else {
         setSuccess(true);
         setTimeout(() => {
@@ -175,12 +247,30 @@ export default function RedefinirSenhaPage() {
         )}
 
         <div className="mt-6 pt-4 border-t border-warm-100">
-          <Link href="/login" className="inline-flex items-center gap-1.5 text-xs text-brand-600 font-semibold hover:underline">
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-1.5 text-xs text-brand-600 font-semibold hover:underline"
+          >
             <ArrowLeft className="w-4 h-4" />
             Voltar para o Login
           </Link>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RedefinirSenhaPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[50vh] flex flex-col items-center justify-center text-center space-y-3">
+          <Loader2 className="w-8 h-8 text-brand-600 animate-spin" />
+          <p className="text-xs text-warm-700 font-medium">Carregando...</p>
+        </div>
+      }
+    >
+      <RedefinirSenhaContent />
+    </Suspense>
   );
 }
