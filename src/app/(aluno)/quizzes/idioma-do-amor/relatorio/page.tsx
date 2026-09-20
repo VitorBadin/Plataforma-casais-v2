@@ -157,24 +157,17 @@ export default function IdiomaAmorRelatorioPage() {
       <div className="bg-white rounded-3xl p-6 sm:p-10 border border-brand-100 shadow-soft relative overflow-hidden space-y-8">
         {/* Topo Institucional */}
         <div className="border-b border-brand-100 pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <img
-              src="/logo.png"
-              alt="Psi Elaine Souza Logo"
-              className="h-16 sm:h-20 w-auto object-contain shrink-0 mix-blend-multiply"
-            />
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-50 border border-pink-200 text-pink-700 text-[10px] font-bold uppercase tracking-wider mb-1">
-                <Heart className="w-3 h-3 fill-pink-500" />
-                <span>Seu Resultado Personalizado</span>
-              </div>
-              <h1 className="text-xl sm:text-2xl font-bold text-warm-900 font-heading">
-                TESTE IDIOMAS DO AMOR — CASAMENTO CONECTADO
-              </h1>
-              <p className="text-xs text-warm-700 mt-0.5">
-                Com Elaine Souza — Psicóloga Especialista em Relacionamentos e Criadora do Método Casamento de Alta Performance
-              </p>
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-50 border border-pink-200 text-pink-700 text-[10px] font-bold uppercase tracking-wider">
+              <Heart className="w-3 h-3 fill-pink-500" />
+              <span>Seu Resultado Personalizado</span>
             </div>
+            <h1 className="text-xl sm:text-2xl font-bold text-warm-900 font-heading">
+              TESTE IDIOMAS DO AMOR — CASAMENTO CONECTADO
+            </h1>
+            <p className="text-xs text-warm-700">
+              Com Elaine Souza — Psicóloga Especialista em Relacionamentos e Criadora do Método Casamento de Alta Performance
+            </p>
           </div>
 
           <div className="bg-rose-soft/80 border border-brand-100 p-3.5 rounded-2xl text-left sm:text-right shrink-0">

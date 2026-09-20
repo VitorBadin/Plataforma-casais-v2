@@ -89,23 +89,16 @@ export default function DiagnosticResultPage() {
 
         {/* Topo do Certificado / Relatório */}
         <div className="border-b border-brand-100 pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <img
-              src="/logo.png"
-              alt="Psi Elaine Souza Logo"
-              className="h-16 sm:h-20 w-auto object-contain shrink-0 mix-blend-multiply"
-            />
-            <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-brand-600">
-                Relatório de Mentoria Individual
-              </span>
-              <h1 className="text-xl sm:text-2xl font-bold text-warm-900 font-heading">
-                {diagnostic.quiz_titulo || 'Diagnóstico de Relacionamento'}
-              </h1>
-            </div>
+          <div className="space-y-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-brand-600 bg-brand-50/80 px-2.5 py-0.5 rounded-full border border-brand-200/60 inline-block">
+              Relatório de Mentoria Individual
+            </span>
+            <h1 className="text-xl sm:text-2xl font-bold text-warm-900 font-heading">
+              {diagnostic.quiz_titulo || 'Diagnóstico de Relacionamento'}
+            </h1>
           </div>
 
-          <div className="bg-rose-soft border border-brand-100 p-3 rounded-2xl text-right sm:text-right shrink-0">
+          <div className="bg-rose-soft border border-brand-100 p-3 rounded-2xl text-left sm:text-right shrink-0">
             <span className="text-[11px] text-warm-700 block font-medium">Pontuação Avaliada</span>
             <span className="text-lg font-bold text-brand-700 font-heading">
               {diagnostic.pontuacao_total} pontos
