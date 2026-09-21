@@ -6,22 +6,35 @@ import { useAuth } from '@/context/AuthContext';
 import { UserDiagnostic } from '@/types/database';
 import { History, Award, ArrowRight, Calendar, Sparkles } from 'lucide-react';
 
+import { fetchUserQuizProgress } from '@/lib/userDiagnostics';
+
 export default function HistoricoPage() {
   const { user } = useAuth();
   const [diagnostics, setDiagnostics] = useState<UserDiagnostic[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
-    const storedDiags = localStorage.getItem(`psi_diagnostics_${user.id}`);
-    if (storedDiags) {
-      try {
-        setDiagnostics(JSON.parse(storedDiags));
-      } catch {
-        setDiagnostics([]);
-      }
-    } else {
+    if (!user) {
       setDiagnostics([]);
+      setLoading(false);
+      return;
     }
+
+    let isMounted = true;
+    async function loadHistory() {
+      setLoading(true);
+      const progress = await fetchUserQuizProgress(user);
+      if (isMounted) {
+        setDiagnostics(progress.diagnostics);
+        setLoading(false);
+      }
+    }
+
+    loadHistory();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   return (

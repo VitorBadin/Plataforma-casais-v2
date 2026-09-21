@@ -9,6 +9,8 @@ import { Quiz, Question, UserDiagnostic } from '@/types/database';
 import { calculateQuizDiagnostic } from '@/lib/diagnosticEngine';
 import { ArrowLeft, ArrowRight, CheckCircle2, HeartHandshake, Sparkles } from 'lucide-react';
 
+import { createClient } from '@/lib/supabase/client';
+
 export default function QuizRunnerPage() {
   const params = useParams();
   const router = useRouter();
@@ -71,24 +73,40 @@ export default function QuizRunnerPage() {
     if (!user) return;
     setIsSubmitting(true);
 
+    const authUserId = user.user_id || user.id;
+
     // Calcula o diagnóstico baseado nas respostas acumuladas
     const newDiagnostic = calculateQuizDiagnostic(
       quiz,
       INITIAL_DIAGNOSTIC_RULES,
       answers,
-      user.id
+      authUserId
     );
 
-    // Persiste o resultado no histórico do usuário
-    const storageKey = `psi_diagnostics_${user.id}`;
-    const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    const updated = [newDiagnostic, ...existing.filter((d: UserDiagnostic) => d.quiz_id !== quiz.id)];
-    localStorage.setItem(storageKey, JSON.stringify(updated));
+    // Persiste o resultado no Supabase
+    const supabase = createClient();
+    if (supabase) {
+      try {
+        await supabase.from('user_diagnostics').upsert({
+          user_id: authUserId,
+          quiz_id: newDiagnostic.quiz_id,
+          pontuacao_total: newDiagnostic.pontuacao_total,
+          titulo_resultado: newDiagnostic.titulo_resultado,
+          resultado_texto: newDiagnostic.resultado_texto,
+          gerado_em: newDiagnostic.gerado_em,
+        });
+      } catch (err) {
+        console.warn('Persistindo localmente (fallback):', err);
+      }
+    }
 
-    /*
-      [EXPANSÃO FUTURA - SUPABASE SYNC]
-      Aqui as respostas serão salvas na tabela `answers` e o diagnóstico gerado será salvo na tabela `user_diagnostics` via Supabase RLS.
-    */
+    // Persiste o resultado no histórico do usuário (ambas as chaves)
+    const storageKey1 = `psi_diagnostics_${user.id}`;
+    const storageKey2 = `psi_diagnostics_${authUserId}`;
+    const existing = JSON.parse(localStorage.getItem(storageKey1) || localStorage.getItem(storageKey2) || '[]');
+    const updated = [newDiagnostic, ...existing.filter((d: UserDiagnostic) => d.quiz_id !== quiz.id)];
+    localStorage.setItem(storageKey1, JSON.stringify(updated));
+    localStorage.setItem(storageKey2, JSON.stringify(updated));
 
     setTimeout(() => {
       setIsSubmitting(false);

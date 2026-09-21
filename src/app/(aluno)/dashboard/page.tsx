@@ -20,6 +20,8 @@ import {
   FileText
 } from 'lucide-react';
 
+import { fetchUserQuizProgress } from '@/lib/userDiagnostics';
+
 export default function StudentDashboard() {
   const { user, quizzesList, resourcesList, refreshProfiles } = useAuth();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
@@ -44,35 +46,22 @@ export default function StudentDashboard() {
       setResources(getStoredResources());
     }
 
-    // Carrega diagnósticos salvos localmente
-    const storedDiags = localStorage.getItem(`psi_diagnostics_${user?.id}`);
-    const tempResult = localStorage.getItem(`psi_temperamento_result_${user?.id}`);
-    const idiomaResult = localStorage.getItem(`psi_idioma_amor_result_${user?.id}`);
-
-    let ids: string[] = [];
-    if (storedDiags) {
-      try {
-        const parsed = JSON.parse(storedDiags);
-        setDiagnostics(parsed);
-        ids = parsed.map((d: UserDiagnostic) => d.quiz_id);
-      } catch {
-        setDiagnostics([]);
-        ids = [];
+    let isMounted = true;
+    async function loadProgress() {
+      if (!user) return;
+      const progress = await fetchUserQuizProgress(user);
+      if (isMounted) {
+        setDiagnostics(progress.diagnostics);
+        setAnsweredQuizIds(progress.answeredIds);
       }
-    } else {
-      setDiagnostics([]);
-      ids = [];
     }
 
-    if (tempResult && !ids.includes('quiz-temperamento')) {
-      ids.push('quiz-temperamento');
-    }
-    if (idiomaResult && !ids.includes('quiz-idioma-amor')) {
-      ids.push('quiz-idioma-amor');
-    }
+    loadProgress();
 
-    setAnsweredQuizIds(ids);
-  }, [user]);
+    return () => {
+      isMounted = false;
+    };
+  }, [user, quizzesList, resourcesList]);
 
   if (!user) return null;
 

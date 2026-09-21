@@ -35,16 +35,24 @@ export default function RecuperarSenhaPage() {
 
       if (resetError) {
         // Mensagens amigáveis em português
-        if (resetError.message.includes('rate limit')) {
+        const msg = typeof resetError.message === 'string' ? resetError.message : '';
+        if (msg.includes('rate limit')) {
           setError('Muitas solicitações recentes. Por favor, aguarde alguns minutos antes de tentar novamente.');
+        } else if (!msg || msg === '{}' || msg.includes('unexpected_failure')) {
+          setError('Não foi possível enviar o e-mail de recuperação. Verifique as configurações de envio ou tente novamente.');
         } else {
-          setError(resetError.message || 'Não foi possível enviar o e-mail de recuperação.');
+          setError(msg || 'Não foi possível enviar o e-mail de recuperação.');
         }
       } else {
         setEnviado(true);
       }
     } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro ao processar sua solicitação.');
+      const msg = err?.message;
+      if (!msg || msg === '{}') {
+        setError('Ocorreu um erro ao processar sua solicitação.');
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }

@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { UserDiagnostic } from '@/types/database';
 import { Award, ArrowLeft, HeartHandshake, Printer, BookOpen, ShieldCheck, Sparkles, Share2 } from 'lucide-react';
 import SpouseQuizSummaryCard from '@/components/SpouseQuizSummaryCard';
+import { fetchUserQuizProgress } from '@/lib/userDiagnostics';
 
 export default function DiagnosticResultPage() {
   const params = useParams();
@@ -17,22 +18,48 @@ export default function DiagnosticResultPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
-    const stored = localStorage.getItem(`psi_diagnostics_${user.id}`);
-    if (stored) {
-      try {
-        const parsed: UserDiagnostic[] = JSON.parse(stored);
-        const found = parsed.find(d => d.id === diagId);
-        if (found) {
-          setDiagnostic(found);
-          setLoading(false);
-          return;
-        }
-      } catch {}
+    if (!user) {
+      setDiagnostic(null);
+      setLoading(false);
+      return;
     }
 
-    setDiagnostic(null);
-    setLoading(false);
+    let isMounted = true;
+    async function loadDiagnostic() {
+      setLoading(true);
+
+      // 1. Tenta do localStorage imediato
+      const userId = user?.id;
+      const userAuthId = user?.user_id;
+      const stored =
+        (userId ? localStorage.getItem(`psi_diagnostics_${userId}`) : null) ||
+        (userAuthId ? localStorage.getItem(`psi_diagnostics_${userAuthId}`) : null);
+      if (stored) {
+        try {
+          const parsed: UserDiagnostic[] = JSON.parse(stored);
+          const found = parsed.find((d) => d.id === diagId || d.quiz_id === diagId);
+          if (found && isMounted) {
+            setDiagnostic(found);
+            setLoading(false);
+            return;
+          }
+        } catch {}
+      }
+
+      // 2. Busca sincronizada do Supabase
+      const progress = await fetchUserQuizProgress(user);
+      if (isMounted) {
+        const found = progress.diagnostics.find((d) => d.id === diagId || d.quiz_id === diagId);
+        setDiagnostic(found || null);
+        setLoading(false);
+      }
+    }
+
+    loadDiagnostic();
+
+    return () => {
+      isMounted = false;
+    };
   }, [diagId, user]);
 
   if (loading) {

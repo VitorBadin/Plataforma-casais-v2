@@ -7,6 +7,8 @@ import { getStoredQuizzes } from '@/lib/mockData';
 import { Quiz, UserDiagnostic } from '@/types/database';
 import { FileCheck2, CheckCircle2, Clock, ArrowRight, Filter } from 'lucide-react';
 
+import { fetchUserQuizProgress } from '@/lib/userDiagnostics';
+
 export default function QuizzesListPage() {
   const { user, quizzesList, refreshProfiles } = useAuth();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
@@ -24,30 +26,20 @@ export default function QuizzesListPage() {
       setQuizzes(getStoredQuizzes());
     }
 
-    const storedDiags = localStorage.getItem(`psi_diagnostics_${user?.id}`);
-    const tempResult = localStorage.getItem(`psi_temperamento_result_${user?.id}`);
-    const idiomaResult = localStorage.getItem(`psi_idioma_amor_result_${user?.id}`);
-
-    let ids: string[] = [];
-    if (storedDiags) {
-      try {
-        const parsed = JSON.parse(storedDiags);
-        ids = parsed.map((d: UserDiagnostic) => d.quiz_id);
-      } catch {
-        ids = [];
+    let isMounted = true;
+    async function loadProgress() {
+      if (!user) return;
+      const progress = await fetchUserQuizProgress(user);
+      if (isMounted) {
+        setAnsweredIds(progress.answeredIds);
       }
-    } else {
-      ids = [];
     }
 
-    if (tempResult && !ids.includes('quiz-temperamento')) {
-      ids.push('quiz-temperamento');
-    }
-    if (idiomaResult && !ids.includes('quiz-idioma-amor')) {
-      ids.push('quiz-idioma-amor');
-    }
+    loadProgress();
 
-    setAnsweredIds(ids);
+    return () => {
+      isMounted = false;
+    };
   }, [user, quizzesList]);
 
   const filteredQuizzes = quizzes.filter((q) => {
