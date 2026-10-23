@@ -35,6 +35,13 @@ interface SpouseQuizData {
 }
 
 export default function SpouseQuizSummaryCard({ quizId, className = '' }: SpouseQuizSummaryCardProps) {
+  // Regra de privacidade clínica estrita:
+  // O Mapa do Desejo do Casal é estritamente individual e confidencial.
+  // Nunca exibir orientações nem revelar respostas/status ao cônjuge.
+  if (quizId === 'mapa-do-desejo' || quizId === 'quiz-mapa-do-desejo') {
+    return null;
+  }
+
   const { user, getSpouse, partnerGuidanceList } = useAuth();
   const [spouseData, setSpouseData] = useState<SpouseQuizData | null>(null);
   const [guidance, setGuidance] = useState<PartnerGuidance | null>(null);

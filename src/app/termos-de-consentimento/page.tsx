@@ -110,7 +110,7 @@ export default function TermosDeConsentimentoPage() {
             </h2>
           </div>
           <p className="text-warm-700 text-sm pl-9 sm:pl-10">
-            Ao utilizar esta plataforma, você poderá compartilhar informações sensíveis sobre sua vida emocional, seu relacionamento e seu comportamento, por meio das respostas aos quizzes e formulários disponibilizados. Esses dados são tratados como dados sensíveis, nos termos da <strong>Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018)</strong>.
+            Ao utilizar esta plataforma, você poderá compartilhar informações sensíveis sobre sua vida emocional, seu relacionamento e seu comportamento, por meio das respostas aos quizzes e formulários disponibilizados (incluindo respostas abertas e reflexivas sobre intimidade, aspirações conjugais e autopercepção, como no <em>Mapa do Desejo do Casal</em>). Esses dados são tratados como dados sensíveis, nos termos da <strong>Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018)</strong> e sob o estrito sigilo do <strong>Código de Ética Profissional do Psicólogo</strong>.
           </p>
         </section>
 
@@ -183,7 +183,18 @@ export default function TermosDeConsentimentoPage() {
                 Importante sobre a privacidade conjugal:
               </p>
               <p className="text-xs leading-relaxed">
-                Apenas o <strong>resultado resumido</strong> é compartilhado entre as contas vinculadas. Suas respostas individuais, pergunta a pergunta, <strong>nunca são expostas ao(à) parceiro(a)</strong> — permanecem visíveis somente para você e para a profissional responsável.
+                Apenas o <strong>resultado resumido</strong> de avaliações gerais é compartilhado entre as contas vinculadas. Suas respostas individuais, pergunta a pergunta, <strong>nunca são expostas ao(à) parceiro(a)</strong> — permanecem visíveis somente para você e para a profissional responsável.
+              </p>
+            </div>
+
+            {/* Destaque Específico: Formulários Íntimos e Reflexivos */}
+            <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200 text-purple-900 space-y-1.5">
+              <p className="font-bold flex items-center gap-1.5 text-xs uppercase tracking-wider text-purple-800">
+                <Lock className="w-4 h-4 text-purple-600 shrink-0" />
+                Formulários Íntimos e Reflexivos (Ex: Mapa do Desejo do Casal):
+              </p>
+              <p className="text-xs leading-relaxed">
+                Certos exercícios e formulários da plataforma possuem caráter estritamente íntimo, confidencial e individual. No caso do <strong>Mapa do Desejo do Casal</strong>, nenhuma resposta, resumo, notificação ou diagnóstico é compartilhado com o cônjuge em nenhuma circunstância na plataforma. Suas anotações são guardadas exclusivamente na sua Pasta do Casal para acesso individual e da psicóloga responsável, aguardando o momento apropriado do ritual guiado na mentoria (Semana 8).
               </p>
             </div>
 

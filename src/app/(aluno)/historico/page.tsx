@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { UserDiagnostic } from '@/types/database';
-import { History, Award, ArrowRight, Calendar, Sparkles } from 'lucide-react';
+import { History, Award, ArrowRight, Calendar, Sparkles, Lock } from 'lucide-react';
 
 import { fetchUserQuizProgress } from '@/lib/userDiagnostics';
 
@@ -82,13 +82,20 @@ export default function HistoricoPage() {
               diag.titulo_resultado?.toLowerCase().includes('idioma') ||
               diag.quiz_titulo?.toLowerCase().includes('idioma do amor');
 
+            const isMapaDesejo =
+              diag.quiz_id === 'mapa-do-desejo' ||
+              diag.quiz_id === 'quiz-mapa-do-desejo' ||
+              diag.id?.startsWith('desire-map-') ||
+              diag.titulo_resultado?.toLowerCase().includes('mapa do desejo') ||
+              diag.quiz_titulo?.toLowerCase().includes('mapa do desejo');
+
             return (
               <div
                 key={diag.id}
                 className="bg-white rounded-3xl p-6 border border-brand-100 shadow-card hover:shadow-soft-hover transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-[11px] font-bold text-brand-700 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-200">
                       {diag.quiz_titulo || 'Diagnóstico Mapeado'}
                     </span>
@@ -99,6 +106,12 @@ export default function HistoricoPage() {
                     {(isTemperamento || isIdiomaAmor) && (
                       <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                         Laudo Disponível
+                      </span>
+                    )}
+                    {isMapaDesejo && (
+                      <span className="text-[10px] font-bold text-brand-800 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-200 inline-flex items-center gap-1">
+                        <Lock className="w-3 h-3 text-brand-600" />
+                        Pasta do Casal (Individual)
                       </span>
                     )}
                   </div>
@@ -113,7 +126,16 @@ export default function HistoricoPage() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  {isTemperamento ? (
+                  {isMapaDesejo ? (
+                    <Link
+                      href="/quizzes/mapa-do-desejo/respostas"
+                      className="px-4 py-2.5 rounded-xl brand-gradient text-white text-xs font-bold shadow-xs hover:opacity-95 transition-all inline-flex items-center justify-center gap-1.5 shrink-0"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Ver Minhas Respostas</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  ) : isTemperamento ? (
                     <>
                       <Link
                         href="/quizzes/temperamento/relatorio"

@@ -16,9 +16,14 @@ import {
   RefreshCw,
   BookOpen,
   BarChart3,
+  Lock,
+  BookmarkCheck,
+  FileText,
 } from 'lucide-react';
 import { TEMPERAMENTO_META, TEMPERAMENTO_PERGUNTAS } from '@/lib/temperamentoData';
 import { IDIOMA_AMOR_META, IDIOMA_AMOR_PERGUNTAS } from '@/lib/idiomaAmorData';
+import { DESIRE_MAP_META, SECTION_1, SECTION_2, SECTION_3 } from '@/lib/desireMapData';
+import { DesireMapResponse } from '@/types/desireMapTypes';
 import { createClient } from '@/lib/supabase/client';
 
 export default function AdminRespostasPage() {
@@ -35,11 +40,13 @@ export default function AdminRespostasPage() {
   const [tempAnswers, setTempAnswers] = useState<any[]>([]);
   const [idiomaResult, setIdiomaResult] = useState<any>(null);
   const [idiomaAnswers, setIdiomaAnswers] = useState<any[]>([]);
+  const [desireMapResult, setDesireMapResult] = useState<DesireMapResponse | null>(null);
   const [userDiagnostics, setUserDiagnostics] = useState<UserDiagnostic[]>([]);
 
   // Estados de visualização / acordeão
   const [showIdiomaDetails, setShowIdiomaDetails] = useState(false);
   const [showTempDetails, setShowTempDetails] = useState(false);
+  const [showDesireMapDetails, setShowDesireMapDetails] = useState(true);
 
   // Inicializa com o primeiro aluno da lista se nenhum estiver selecionado
   useEffect(() => {
@@ -74,6 +81,7 @@ export default function AdminRespostasPage() {
     let fetchedTempAnswers: any[] = [];
     let fetchedIdiomaResult: any = null;
     let fetchedIdiomaAnswers: any[] = [];
+    let fetchedDesireMap: DesireMapResponse | null = null;
     let fetchedDiagnostics: UserDiagnostic[] = [];
 
     if (supabase && validIds.length > 0) {
@@ -136,6 +144,19 @@ export default function AdminRespostasPage() {
         if (dbDiags && dbDiags.length > 0) {
           fetchedDiagnostics = dbDiags;
         }
+
+        // 6. Busca Mapa do Desejo do Casal do Supabase
+        const { data: dbDesireMap } = await supabase
+          .from('desire_map_responses')
+          .select('*')
+          .in('user_id', validIds)
+          .order('enviado_em', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (dbDesireMap) {
+          fetchedDesireMap = dbDesireMap as DesireMapResponse;
+        }
       } catch (err) {
         console.warn('Erro ao carregar dados do Supabase:', err);
       }
@@ -153,7 +174,7 @@ export default function AdminRespostasPage() {
       }
     }
 
-    if (fetchedIdiomaAnswers.length === 0) {
+    if (!fetchedIdiomaAnswers.length) {
       const storedAnswers =
         localStorage.getItem(`psi_idioma_amor_answers_${profId}`) ||
         localStorage.getItem(`psi_idioma_amor_answers_${authId}`);
@@ -179,7 +200,7 @@ export default function AdminRespostasPage() {
       }
     }
 
-    if (fetchedTempAnswers.length === 0) {
+    if (!fetchedTempAnswers.length) {
       const storedTempAns =
         localStorage.getItem(`psi_temperamento_answers_${profId}`) ||
         localStorage.getItem(`psi_temperamento_answers_${authId}`);
@@ -190,6 +211,17 @@ export default function AdminRespostasPage() {
             question_number: parseInt(qNum, 10),
             resposta: ans,
           }));
+        } catch {}
+      }
+    }
+
+    if (!fetchedDesireMap) {
+      const storedDesireMap =
+        localStorage.getItem(`psi_desire_map_response_${profId}`) ||
+        localStorage.getItem(`psi_desire_map_response_${authId}`);
+      if (storedDesireMap) {
+        try {
+          fetchedDesireMap = JSON.parse(storedDesireMap);
         } catch {}
       }
     }
@@ -209,6 +241,7 @@ export default function AdminRespostasPage() {
     setIdiomaAnswers(fetchedIdiomaAnswers);
     setTempResult(fetchedTempResult);
     setTempAnswers(fetchedTempAnswers);
+    setDesireMapResult(fetchedDesireMap);
     setUserDiagnostics(fetchedDiagnostics);
     setLoadingStudentData(false);
   };
@@ -221,6 +254,7 @@ export default function AdminRespostasPage() {
       setIdiomaAnswers([]);
       setTempResult(null);
       setTempAnswers([]);
+      setDesireMapResult(null);
       setUserDiagnostics([]);
     }
   }, [selectedProfile?.id, selectedProfile?.user_id]);
@@ -234,7 +268,7 @@ export default function AdminRespostasPage() {
     setTimeout(() => setIsRefreshing(false), 500);
   };
 
-  const hasAnyData = !!tempResult || !!idiomaResult || userDiagnostics.length > 0;
+  const hasAnyData = !!tempResult || !!idiomaResult || !!desireMapResult || userDiagnostics.length > 0;
 
   return (
     <div className="space-y-6">
@@ -685,9 +719,169 @@ export default function AdminRespostasPage() {
                   )}
 
                   {/* ======================================================== */}
+                  {/* MAPA DO DESEJO DO CASAL (CONFIDENCIAL) */}
+                  {/* ======================================================== */}
+                  {desireMapResult && (
+                    <div className="rounded-2xl border border-purple-200 overflow-hidden bg-gradient-to-br from-purple-50/40 via-white to-pink-50/30 shadow-xs">
+                      <div className="p-5 space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">🗝️</span>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-[11px] font-bold text-purple-800 bg-purple-100/70 px-2.5 py-0.5 rounded-full border border-purple-200">
+                                {DESIRE_MAP_META.titulo}
+                              </span>
+                              <span className="text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200 inline-flex items-center gap-1">
+                                <Lock className="w-3 h-3 text-brand-600" />
+                                Sigilo Individual (Semana 8)
+                              </span>
+                            </div>
+                          </div>
+
+                          <span className="text-[11px] text-warm-700 flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {desireMapResult.enviado_em
+                              ? new Date(desireMapResult.enviado_em).toLocaleDateString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })
+                              : 'Preenchido'}
+                          </span>
+                        </div>
+
+                        <div className="p-3.5 rounded-xl bg-purple-50/70 border border-purple-200/60 text-xs text-purple-900 space-y-1">
+                          <p className="font-bold flex items-center gap-1.5 text-purple-800">
+                            <Lock className="w-3.5 h-3.5" />
+                            Nota de Confidencialidade Clínica:
+                          </p>
+                          <p className="leading-relaxed">
+                            Estas respostas são estritamente individuais e confidenciais do aluno. Nunca são compartilhadas com o cônjuge pela plataforma. A abertura e o diálogo acontecem de forma orientada pela mentora no ritual da Semana 8.
+                          </p>
+                        </div>
+
+                        {/* Botão de Toggle / Acordeão das Respostas */}
+                        <div className="pt-1">
+                          <button
+                            onClick={() => setShowDesireMapDetails(!showDesireMapDetails)}
+                            className="w-full py-2.5 px-4 rounded-xl bg-white border border-brand-200 hover:bg-brand-50 text-brand-800 text-xs font-bold flex items-center justify-between transition-all cursor-pointer"
+                          >
+                            <span className="flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-brand-600" />
+                              <span>
+                                {showDesireMapDetails ? 'Ocultar' : 'Visualizar'} Respostas Completas (10 Experiências + 3 Questões)
+                              </span>
+                            </span>
+                            {showDesireMapDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          </button>
+
+                          {showDesireMapDetails && (
+                            <div className="mt-4 space-y-5 animate-in fade-in duration-150">
+                              {/* Seção 1 */}
+                              <div className="space-y-2">
+                                <div className="border-b border-brand-100 pb-1 flex items-center justify-between">
+                                  <h5 className="text-xs font-bold text-warm-900 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span className="w-5 h-5 rounded-md bg-brand-100 text-brand-700 font-bold text-[10px] flex items-center justify-center">1</span>
+                                    Seção 1 — Questão 01: O Que Eu Gostaria De Construir Com Você
+                                  </h5>
+                                  <span className="text-[10px] text-warm-500 font-medium">10 experiências</span>
+                                </div>
+                                <p className="text-[11px] text-warm-600 italic">
+                                  {SECTION_1.supportText}
+                                </p>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                                  {SECTION_1.experiences.map((exp, idx) => {
+                                    const val = desireMapResult[exp.key as keyof DesireMapResponse] as string;
+                                    return (
+                                      <div key={exp.key} className="p-3 rounded-xl bg-white border border-warm-200 space-y-1 text-xs">
+                                        <span className="font-bold text-brand-700 text-[11px] flex items-center gap-1">
+                                          <span className="w-4 h-4 rounded bg-brand-50 text-brand-600 font-bold text-[9px] flex items-center justify-center border border-brand-200">
+                                            {idx + 1}
+                                          </span>
+                                          {exp.label}
+                                        </span>
+                                        <p className="text-warm-900 font-medium whitespace-pre-wrap text-[11px] leading-relaxed pl-5">
+                                          {val || '(Vazio)'}
+                                        </p>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              {/* Seção 2 */}
+                              <div className="space-y-3 pt-3 border-t border-warm-200/60">
+                                <div className="border-b border-brand-100 pb-1">
+                                  <h5 className="text-xs font-bold text-warm-900 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span className="w-5 h-5 rounded-md bg-brand-100 text-brand-700 font-bold text-[10px] flex items-center justify-center">2</span>
+                                    Seção 2 — O Significado Emocional Do Meu Desejo
+                                  </h5>
+                                </div>
+
+                                {/* Questão 02 */}
+                                <div className="p-3.5 rounded-xl bg-white border border-warm-200 text-xs space-y-1.5">
+                                  <p className="font-bold text-warm-900">
+                                    {SECTION_2.questions[0].number}: {SECTION_2.questions[0].prompt}
+                                  </p>
+                                  {SECTION_2.questions[0].hint && (
+                                    <p className="text-[11px] text-warm-500 italic">{SECTION_2.questions[0].hint}</p>
+                                  )}
+                                  <p className="text-warm-900 font-medium whitespace-pre-wrap text-xs bg-rose-soft/40 p-3 rounded-lg border border-brand-100/60 leading-relaxed">
+                                    {desireMapResult.q02_significado || '(Vazio)'}
+                                  </p>
+                                </div>
+
+                                {/* Questão 03 */}
+                                <div className="p-3.5 rounded-xl bg-white border border-warm-200 text-xs space-y-1.5">
+                                  <p className="font-bold text-warm-900">
+                                    {SECTION_2.questions[1].number}: {SECTION_2.questions[1].prompt}
+                                  </p>
+                                  <p className="text-warm-900 font-medium whitespace-pre-wrap text-xs bg-rose-soft/40 p-3 rounded-lg border border-brand-100/60 leading-relaxed">
+                                    {desireMapResult.q03_perdido || '(Vazio)'}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Seção 3 */}
+                              <div className="space-y-3 pt-3 border-t border-warm-200/60">
+                                <div className="border-b border-brand-100 pb-1">
+                                  <h5 className="text-xs font-bold text-warm-900 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span className="w-5 h-5 rounded-md bg-brand-100 text-brand-700 font-bold text-[10px] flex items-center justify-center">3</span>
+                                    Seção 3 — Autopercepção
+                                  </h5>
+                                </div>
+
+                                <div className="p-3.5 rounded-xl bg-white border border-warm-200 text-xs space-y-1.5">
+                                  <p className="font-bold text-warm-900">
+                                    {SECTION_3.questions[0].number}: {SECTION_3.questions[0].prompt}
+                                  </p>
+                                  <p className="text-warm-900 font-medium whitespace-pre-wrap text-xs bg-rose-soft/40 p-3 rounded-lg border border-brand-100/60 leading-relaxed">
+                                    {desireMapResult.q04_autopercepcao || '(Vazio)'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ======================================================== */}
                   {/* OUTROS DIAGNÓSTICOS CLÍNICOS */}
                   {/* ======================================================== */}
-                  {userDiagnostics.map((diag) => (
+                  {userDiagnostics
+                    .filter(
+                      (diag) =>
+                        diag.quiz_id !== 'mapa-do-desejo' &&
+                        diag.quiz_id !== 'quiz-mapa-do-desejo' &&
+                        !diag.id?.startsWith('desire-map-') &&
+                        !diag.titulo_resultado?.toLowerCase().includes('mapa do desejo')
+                    )
+                    .map((diag) => (
                     <div
                       key={diag.id}
                       className="p-5 rounded-2xl bg-white border border-brand-100 shadow-xs space-y-3"

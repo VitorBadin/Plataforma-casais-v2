@@ -105,3 +105,5 @@ export interface PartnerGuidance {
   tarefas?: string[] | Record<string, any>;
   criado_em?: string;
 }
+
+export * from './desireMapTypes';

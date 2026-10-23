@@ -52,6 +52,23 @@ export const INITIAL_QUIZZES: Quiz[] = [
     ],
   },
   {
+    id: 'mapa-do-desejo',
+    titulo: 'Mapa do Desejo do Casal',
+    descricao: 'Exercício reflexivo e confidencial de imaginação, conexão e intimidade. Suas respostas ficam guardadas para o ritual guiado na mentoria.',
+    categoria: 'Intimidade & Desejo',
+    ativo: true,
+    criado_em: '2026-09-15T10:00:00Z',
+    questions: [
+      ...Array.from({ length: 4 }, (_, i) => ({
+        id: `qmd-${i + 1}`,
+        quiz_id: 'mapa-do-desejo',
+        texto: `Questão ${i + 1}`,
+        tipo: 'texto' as const,
+        ordem: i + 1,
+      })),
+    ],
+  },
+  {
     id: 'quiz-1',
     titulo: 'Mapeamento da Saúde da Comunicação no Relacionamento',
     descricao: 'Identifique os padrões de escuta, reatividade e abertura emocional que impactam o diálogo cotidiano do casal.',
@@ -341,6 +358,11 @@ export const getStoredQuizzes = (): Quiz[] => {
   }
   try {
     const parsed: Quiz[] = JSON.parse(stored);
+    INITIAL_QUIZZES.forEach(iq => {
+      if (!deletedSet.has(iq.id) && !parsed.some(q => q.id === iq.id)) {
+        parsed.push(iq);
+      }
+    });
     return parsed.filter(q => !deletedSet.has(q.id));
   } catch {
     const initial = INITIAL_QUIZZES.filter(q => !deletedSet.has(q.id));

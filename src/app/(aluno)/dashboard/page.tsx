@@ -210,10 +210,14 @@ export default function StudentDashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {quizzes.map((quiz) => {
-            const isCompleted = answeredQuizIds.includes(quiz.id);
+            const isCompleted =
+              answeredQuizIds.includes(quiz.id) ||
+              (quiz.id === 'mapa-do-desejo' && answeredQuizIds.includes('quiz-mapa-do-desejo')) ||
+              (quiz.id === 'quiz-mapa-do-desejo' && answeredQuizIds.includes('mapa-do-desejo'));
             const isTemperamento = quiz.id === 'quiz-temperamento';
             const isIdiomaAmor = quiz.id === 'quiz-idioma-amor';
-            const isSpecial = isTemperamento || isIdiomaAmor;
+            const isMapaDesejo = quiz.id === 'mapa-do-desejo' || quiz.id === 'quiz-mapa-do-desejo';
+            const isSpecial = isTemperamento || isIdiomaAmor || isMapaDesejo;
 
             return (
               <div
@@ -226,7 +230,7 @@ export default function StudentDashboard() {
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
                         {quiz.categoria}
                       </span>
@@ -238,6 +242,11 @@ export default function StudentDashboard() {
                       {isIdiomaAmor && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-100 text-pink-800 border border-pink-200">
                           ❤️ Destaque
+                        </span>
+                      )}
+                      {isMapaDesejo && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200 inline-flex items-center gap-1">
+                          🔒 Confidencial
                         </span>
                       )}
                     </div>
@@ -266,11 +275,21 @@ export default function StudentDashboard() {
 
                 <div className="pt-3 border-t border-warm-100 flex items-center justify-between gap-2">
                   <span className="text-[11px] text-warm-700 font-medium shrink-0">
-                    {quiz.questions?.length || (isTemperamento ? 23 : isIdiomaAmor ? 20 : 4)} perguntas
+                    {isMapaDesejo
+                      ? '10 exp + 3 questões'
+                      : `${quiz.questions?.length || (isTemperamento ? 23 : isIdiomaAmor ? 20 : 4)} perguntas`}
                   </span>
 
                   <div className="flex items-center gap-2">
-                    {isTemperamento && isCompleted ? (
+                    {isMapaDesejo && isCompleted ? (
+                      <Link
+                        href="/quizzes/mapa-do-desejo/respostas"
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold brand-gradient text-white shadow-sm hover:opacity-95 transition-all flex items-center gap-1"
+                      >
+                        <span>Ver Minhas Respostas</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    ) : isTemperamento && isCompleted ? (
                       <>
                         <Link
                           href="/quizzes/temperamento/relatorio"
@@ -305,7 +324,9 @@ export default function StudentDashboard() {
                     ) : (
                       <Link
                         href={
-                          isTemperamento
+                          isMapaDesejo
+                            ? '/quizzes/mapa-do-desejo'
+                            : isTemperamento
                             ? '/quizzes/temperamento'
                             : isIdiomaAmor
                             ? '/quizzes/idioma-do-amor'

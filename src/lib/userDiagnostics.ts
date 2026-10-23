@@ -4,12 +4,14 @@ import { IDIOMA_AMOR_META } from '@/lib/idiomaAmorData';
 import { TEMPERAMENTO_META } from '@/lib/temperamentoData';
 import { IdiomaAmorResult, IdiomaAmor } from '@/types/idiomaAmorTypes';
 import { TemperamentoResult, Temperamento } from '@/types/temperamentoTypes';
+import { DesireMapResponse } from '@/types/desireMapTypes';
 
 export interface UserQuizProgress {
   answeredIds: string[];
   diagnostics: UserDiagnostic[];
   idiomaResult: IdiomaAmorResult | null;
   temperamentoResult: TemperamentoResult | null;
+  desireMapResult?: DesireMapResponse | null;
 }
 
 export async function fetchUserQuizProgress(user: Profile | null): Promise<UserQuizProgress> {
@@ -28,6 +30,7 @@ export async function fetchUserQuizProgress(user: Profile | null): Promise<UserQ
 
   let fetchedIdiomaResult: IdiomaAmorResult | null = null;
   let fetchedTempResult: TemperamentoResult | null = null;
+  let fetchedDesireMapResult: DesireMapResponse | null = null;
   let fetchedDbDiagnostics: UserDiagnostic[] = [];
 
   const supabase = createClient();
@@ -126,6 +129,19 @@ export async function fetchUserQuizProgress(user: Profile | null): Promise<UserQ
       if (dbDiags && dbDiags.length > 0) {
         fetchedDbDiagnostics = dbDiags as UserDiagnostic[];
       }
+
+      // 4. Busca Mapa do Desejo do Casal (confidencial - estritamente individual)
+      const { data: dbDesireMap } = await supabase
+        .from('desire_map_responses')
+        .select('*')
+        .in('user_id', validIds)
+        .order('enviado_em', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (dbDesireMap) {
+        fetchedDesireMapResult = dbDesireMap as DesireMapResponse;
+      }
     } catch (err) {
       console.warn('Erro ao carregar dados de diagnósticos do Supabase:', err);
     }
@@ -150,6 +166,17 @@ export async function fetchUserQuizProgress(user: Profile | null): Promise<UserQ
     if (storedTemp) {
       try {
         fetchedTempResult = JSON.parse(storedTemp);
+      } catch {}
+    }
+  }
+
+  if (!fetchedDesireMapResult) {
+    const storedDesireMap =
+      localStorage.getItem(`psi_desire_map_response_${profId}`) ||
+      localStorage.getItem(`psi_desire_map_response_${authUserId}`);
+    if (storedDesireMap) {
+      try {
+        fetchedDesireMapResult = JSON.parse(storedDesireMap);
       } catch {}
     }
   }
@@ -204,6 +231,20 @@ export async function fetchUserQuizProgress(user: Profile | null): Promise<UserQ
     });
   }
 
+  // Adiciona Mapa do Desejo do Casal à lista individual de diagnósticos (Pasta do Casal)
+  if (fetchedDesireMapResult && !allDiagnostics.some((d) => d.quiz_id === 'mapa-do-desejo' || d.quiz_id === 'quiz-mapa-do-desejo')) {
+    allDiagnostics.push({
+      id: fetchedDesireMapResult.id || `desire-map-${authUserId}`,
+      user_id: authUserId,
+      quiz_id: 'mapa-do-desejo',
+      pontuacao_total: 0,
+      titulo_resultado: 'Mapa do Desejo do Casal',
+      resultado_texto: 'Exercício individual confidencial de imaginação, significado emocional e intimidade. Suas respostas estão guardadas na Pasta do Casal para o ritual prático da Semana 8.',
+      gerado_em: fetchedDesireMapResult.enviado_em || fetchedDesireMapResult.criado_em || new Date().toISOString(),
+      quiz_titulo: 'Mapa do Desejo do Casal',
+    });
+  }
+
   // Ordena diagnósticos por data decrescente
   allDiagnostics.sort((a, b) => new Date(b.gerado_em).getTime() - new Date(a.gerado_em).getTime());
 
@@ -211,6 +252,10 @@ export async function fetchUserQuizProgress(user: Profile | null): Promise<UserQ
   const answeredIdsSet = new Set<string>();
   if (fetchedIdiomaResult) answeredIdsSet.add('quiz-idioma-amor');
   if (fetchedTempResult) answeredIdsSet.add('quiz-temperamento');
+  if (fetchedDesireMapResult) {
+    answeredIdsSet.add('mapa-do-desejo');
+    answeredIdsSet.add('quiz-mapa-do-desejo');
+  }
   allDiagnostics.forEach((d) => {
     if (d.quiz_id) answeredIdsSet.add(d.quiz_id);
   });
@@ -227,6 +272,10 @@ export async function fetchUserQuizProgress(user: Profile | null): Promise<UserQ
       localStorage.setItem(`psi_temperamento_result_${profId}`, JSON.stringify(fetchedTempResult));
       localStorage.setItem(`psi_temperamento_result_${authUserId}`, JSON.stringify(fetchedTempResult));
     }
+    if (fetchedDesireMapResult) {
+      localStorage.setItem(`psi_desire_map_response_${profId}`, JSON.stringify(fetchedDesireMapResult));
+      localStorage.setItem(`psi_desire_map_response_${authUserId}`, JSON.stringify(fetchedDesireMapResult));
+    }
     localStorage.setItem(`psi_diagnostics_${profId}`, JSON.stringify(allDiagnostics));
     localStorage.setItem(`psi_diagnostics_${authUserId}`, JSON.stringify(allDiagnostics));
   } catch (err) {
@@ -238,5 +287,6 @@ export async function fetchUserQuizProgress(user: Profile | null): Promise<UserQ
     diagnostics: allDiagnostics,
     idiomaResult: fetchedIdiomaResult,
     temperamentoResult: fetchedTempResult,
+    desireMapResult: fetchedDesireMapResult,
   };
 }

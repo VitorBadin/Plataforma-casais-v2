@@ -638,3 +638,43 @@ BEGIN
 END;
 $$;
 
+-- ========================================================
+-- FORMULÁRIO: MAPA DO DESEJO DO CASAL (desire_map_responses)
+-- ========================================================
+-- Respostas íntimas e confidenciais: NÃO compartilhadas com o cônjuge.
+CREATE TABLE IF NOT EXISTS public.desire_map_responses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID UNIQUE NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  exp_01 TEXT NOT NULL,
+  exp_02 TEXT NOT NULL,
+  exp_03 TEXT NOT NULL,
+  exp_04 TEXT NOT NULL,
+  exp_05 TEXT NOT NULL,
+  exp_06 TEXT NOT NULL,
+  exp_07 TEXT NOT NULL,
+  exp_08 TEXT NOT NULL,
+  exp_09 TEXT NOT NULL,
+  exp_10 TEXT NOT NULL,
+  q02_significado TEXT NOT NULL,
+  q03_perdido TEXT NOT NULL,
+  q04_autopercepcao TEXT NOT NULL,
+  enviado_em TIMESTAMPTZ DEFAULT now(),
+  criado_em TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_desire_map_user ON public.desire_map_responses(user_id);
+
+ALTER TABLE public.desire_map_responses ENABLE ROW LEVEL SECURITY;
+
+-- Leitura: estritamente o próprio usuário ou administrador (NUNCA cônjuge)
+CREATE POLICY "Leitura de mapa do desejo proprio e admin" ON public.desire_map_responses
+  FOR SELECT USING (auth.uid() = user_id OR public.is_admin());
+
+-- Inserção: apenas o próprio usuário ativo
+CREATE POLICY "Insercao de mapa do desejo proprio" ON public.desire_map_responses
+  FOR INSERT WITH CHECK (auth.uid() = user_id AND public.is_ativo());
+
+-- Admin gerencia mapa do desejo
+CREATE POLICY "Admin gerencia mapa do desejo" ON public.desire_map_responses
+  FOR ALL USING (public.is_admin());
+
