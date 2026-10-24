@@ -678,3 +678,74 @@ CREATE POLICY "Insercao de mapa do desejo proprio" ON public.desire_map_response
 CREATE POLICY "Admin gerencia mapa do desejo" ON public.desire_map_responses
   FOR ALL USING (public.is_admin());
 
+-- ========================================================
+-- 23. FORMULÁRIO: MAPA DA SAÚDE DO CASAL (couple_health_map_responses)
+-- Notas de 1 a 10 para os 8 pilares. RLS permite leitura do cônjuge apenas se ambos tiverem respondido.
+-- ========================================================
+CREATE TABLE IF NOT EXISTS public.couple_health_map_responses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  p01_financeira SMALLINT NOT NULL CHECK (p01_financeira >= 1 AND p01_financeira <= 10),
+  p02_rotina SMALLINT NOT NULL CHECK (p02_rotina >= 1 AND p02_rotina <= 10),
+  p03_familiar SMALLINT NOT NULL CHECK (p03_familiar >= 1 AND p03_familiar <= 10),
+  p04_dialogo SMALLINT NOT NULL CHECK (p04_dialogo >= 1 AND p04_dialogo <= 10),
+  p05_tempo SMALLINT NOT NULL CHECK (p05_tempo >= 1 AND p05_tempo <= 10),
+  p06_conexao SMALLINT NOT NULL CHECK (p06_conexao >= 1 AND p06_conexao <= 10),
+  p07_quimica SMALLINT NOT NULL CHECK (p07_quimica >= 1 AND p07_quimica <= 10),
+  p08_valores SMALLINT NOT NULL CHECK (p08_valores >= 1 AND p08_valores <= 10),
+  enviado_em TIMESTAMPTZ NOT NULL DEFAULT now(),
+  criado_em TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_couple_health_map_user ON public.couple_health_map_responses(user_id);
+
+ALTER TABLE public.couple_health_map_responses ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Leitura de mapa da saude proprio admin ou conjuge se ambos responderam" ON public.couple_health_map_responses
+  FOR SELECT USING (
+    auth.uid() = user_id
+    OR public.is_admin()
+    OR (
+      EXISTS (
+        SELECT 1 FROM public.couples c
+        WHERE (c.user_id_1 = auth.uid() AND c.user_id_2 = public.couple_health_map_responses.user_id)
+           OR (c.user_id_2 = auth.uid() AND c.user_id_1 = public.couple_health_map_responses.user_id)
+      )
+      AND EXISTS (
+        SELECT 1 FROM public.couple_health_map_responses my_resp
+        WHERE my_resp.user_id = auth.uid()
+      )
+    )
+  );
+
+CREATE POLICY "Insercao de mapa da saude proprio" ON public.couple_health_map_responses
+  FOR INSERT WITH CHECK (auth.uid() = user_id AND public.is_ativo());
+
+CREATE POLICY "Admin gerencia mapa da saude" ON public.couple_health_map_responses
+  FOR ALL USING (public.is_admin());
+
+CREATE OR REPLACE FUNCTION public.has_spouse_answered_health_map(spouse_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT (
+    public.is_admin() OR
+    EXISTS (
+      SELECT 1 FROM public.couples c
+      WHERE (c.user_id_1 = auth.uid() AND c.user_id_2 = spouse_id)
+         OR (c.user_id_2 = auth.uid() AND c.user_id_1 = spouse_id)
+    )
+  ) THEN
+    RETURN FALSE;
+  END IF;
+
+  RETURN EXISTS (
+    SELECT 1 FROM public.couple_health_map_responses
+    WHERE user_id = spouse_id
+  );
+END;
+$$;
+

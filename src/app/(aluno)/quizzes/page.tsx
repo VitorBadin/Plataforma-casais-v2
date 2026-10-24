@@ -101,11 +101,14 @@ export default function QuizzesListPage() {
           const isCompleted =
             answeredIds.includes(quiz.id) ||
             (quiz.id === 'mapa-do-desejo' && answeredIds.includes('quiz-mapa-do-desejo')) ||
-            (quiz.id === 'quiz-mapa-do-desejo' && answeredIds.includes('mapa-do-desejo'));
+            (quiz.id === 'quiz-mapa-do-desejo' && answeredIds.includes('mapa-do-desejo')) ||
+            (quiz.id === 'mapa-da-saude' && answeredIds.includes('quiz-mapa-da-saude')) ||
+            (quiz.id === 'quiz-mapa-da-saude' && answeredIds.includes('mapa-da-saude'));
           const isTemperamento = quiz.id === 'quiz-temperamento';
           const isIdiomaAmor = quiz.id === 'quiz-idioma-amor';
           const isMapaDesejo = quiz.id === 'mapa-do-desejo' || quiz.id === 'quiz-mapa-do-desejo';
-          const isSpecial = isTemperamento || isIdiomaAmor || isMapaDesejo;
+          const isMapaSaude = quiz.id === 'mapa-da-saude' || quiz.id === 'quiz-mapa-da-saude';
+          const isSpecial = isTemperamento || isIdiomaAmor || isMapaDesejo || isMapaSaude;
 
           return (
             <div
@@ -137,6 +140,11 @@ export default function QuizzesListPage() {
                         🔒 Confidencial
                       </span>
                     )}
+                    {isMapaSaude && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-brand-800 border border-brand-200 inline-flex items-center gap-1">
+                        📊 Radar & Comparativo
+                      </span>
+                    )}
                   </div>
 
                   {isCompleted ? (
@@ -165,6 +173,8 @@ export default function QuizzesListPage() {
                 <span className="text-xs text-warm-700 font-medium shrink-0">
                   {isMapaDesejo
                     ? '10 experiências + 3 questões'
+                    : isMapaSaude
+                    ? '8 pilares • Escala 1 a 10'
                     : `${quiz.questions?.length || (isTemperamento ? 23 : isIdiomaAmor ? 20 : 4)} perguntas`}
                 </span>
 
@@ -175,6 +185,14 @@ export default function QuizzesListPage() {
                       className="px-4 py-2.5 rounded-xl text-xs font-bold brand-gradient text-white shadow-md hover:opacity-95 transition-all flex items-center gap-1.5"
                     >
                       <span>Ver Minhas Respostas</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  ) : isMapaSaude && isCompleted ? (
+                    <Link
+                      href="/quizzes/mapa-da-saude/resultado"
+                      className="px-4 py-2.5 rounded-xl text-xs font-bold brand-gradient text-white shadow-md hover:opacity-95 transition-all flex items-center gap-1.5"
+                    >
+                      <span>Ver Meu Mapa & Ações</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   ) : isTemperamento && isCompleted ? (
@@ -214,6 +232,8 @@ export default function QuizzesListPage() {
                       href={
                         isMapaDesejo
                           ? '/quizzes/mapa-do-desejo'
+                          : isMapaSaude
+                          ? '/quizzes/mapa-da-saude'
                           : isTemperamento
                           ? '/quizzes/temperamento'
                           : isIdiomaAmor
@@ -226,7 +246,7 @@ export default function QuizzesListPage() {
                           : 'brand-gradient text-white shadow-md hover:opacity-95'
                       }`}
                     >
-                      <span>{isCompleted ? 'Refazer / Ver Diagnóstico' : 'Responder Quiz'}</span>
+                      <span>{isCompleted ? 'Ver Meu Diagnóstico' : 'Responder Quiz'}</span>
                       <ArrowRight className="w-4 h-4" />
                     </Link>
                   )}

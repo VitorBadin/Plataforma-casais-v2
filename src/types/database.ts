@@ -107,3 +107,4 @@ export interface PartnerGuidance {
 }
 
 export * from './desireMapTypes';
+export * from './coupleHealthTypes';

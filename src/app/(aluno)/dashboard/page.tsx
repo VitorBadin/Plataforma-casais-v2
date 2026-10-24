@@ -213,11 +213,14 @@ export default function StudentDashboard() {
             const isCompleted =
               answeredQuizIds.includes(quiz.id) ||
               (quiz.id === 'mapa-do-desejo' && answeredQuizIds.includes('quiz-mapa-do-desejo')) ||
-              (quiz.id === 'quiz-mapa-do-desejo' && answeredQuizIds.includes('mapa-do-desejo'));
+              (quiz.id === 'quiz-mapa-do-desejo' && answeredQuizIds.includes('mapa-do-desejo')) ||
+              (quiz.id === 'mapa-da-saude' && answeredQuizIds.includes('quiz-mapa-da-saude')) ||
+              (quiz.id === 'quiz-mapa-da-saude' && answeredQuizIds.includes('mapa-da-saude'));
             const isTemperamento = quiz.id === 'quiz-temperamento';
             const isIdiomaAmor = quiz.id === 'quiz-idioma-amor';
             const isMapaDesejo = quiz.id === 'mapa-do-desejo' || quiz.id === 'quiz-mapa-do-desejo';
-            const isSpecial = isTemperamento || isIdiomaAmor || isMapaDesejo;
+            const isMapaSaude = quiz.id === 'mapa-da-saude' || quiz.id === 'quiz-mapa-da-saude';
+            const isSpecial = isTemperamento || isIdiomaAmor || isMapaDesejo || isMapaSaude;
 
             return (
               <div
@@ -249,6 +252,11 @@ export default function StudentDashboard() {
                           🔒 Confidencial
                         </span>
                       )}
+                      {isMapaSaude && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-brand-800 border border-brand-200 inline-flex items-center gap-1">
+                          📊 Radar & Comparativo
+                        </span>
+                      )}
                     </div>
 
                     {isCompleted ? (
@@ -277,6 +285,8 @@ export default function StudentDashboard() {
                   <span className="text-[11px] text-warm-700 font-medium shrink-0">
                     {isMapaDesejo
                       ? '10 exp + 3 questões'
+                      : isMapaSaude
+                      ? '8 pilares • Escala 1 a 10'
                       : `${quiz.questions?.length || (isTemperamento ? 23 : isIdiomaAmor ? 20 : 4)} perguntas`}
                   </span>
 
@@ -287,6 +297,14 @@ export default function StudentDashboard() {
                         className="px-3.5 py-1.5 rounded-xl text-xs font-bold brand-gradient text-white shadow-sm hover:opacity-95 transition-all flex items-center gap-1"
                       >
                         <span>Ver Minhas Respostas</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    ) : isMapaSaude && isCompleted ? (
+                      <Link
+                        href="/quizzes/mapa-da-saude/resultado"
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold brand-gradient text-white shadow-sm hover:opacity-95 transition-all flex items-center gap-1"
+                      >
+                        <span>Ver Meu Mapa</span>
                         <ArrowRight className="w-3 h-3" />
                       </Link>
                     ) : isTemperamento && isCompleted ? (
@@ -326,6 +344,8 @@ export default function StudentDashboard() {
                         href={
                           isMapaDesejo
                             ? '/quizzes/mapa-do-desejo'
+                            : isMapaSaude
+                            ? '/quizzes/mapa-da-saude'
                             : isTemperamento
                             ? '/quizzes/temperamento'
                             : isIdiomaAmor
@@ -338,7 +358,7 @@ export default function StudentDashboard() {
                             : 'brand-gradient text-white shadow-sm hover:opacity-95'
                         }`}
                       >
-                        <span>{isCompleted ? 'Refazer / Ver Diagnóstico' : 'Responder Quiz'}</span>
+                        <span>{isCompleted ? 'Ver Meu Diagnóstico' : 'Responder Quiz'}</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </Link>
                     )}

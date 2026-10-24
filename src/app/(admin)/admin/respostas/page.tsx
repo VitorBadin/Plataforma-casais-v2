@@ -19,11 +19,18 @@ import {
   Lock,
   BookmarkCheck,
   FileText,
+  Activity,
+  AlertTriangle,
+  Users,
+  Clock,
 } from 'lucide-react';
 import { TEMPERAMENTO_META, TEMPERAMENTO_PERGUNTAS } from '@/lib/temperamentoData';
 import { IDIOMA_AMOR_META, IDIOMA_AMOR_PERGUNTAS } from '@/lib/idiomaAmorData';
 import { DESIRE_MAP_META, SECTION_1, SECTION_2, SECTION_3 } from '@/lib/desireMapData';
 import { DesireMapResponse } from '@/types/desireMapTypes';
+import { COUPLE_HEALTH_META, COUPLE_HEALTH_PILLARS } from '@/lib/coupleHealthData';
+import { CoupleHealthMapResponse, CoupleHealthPillarKey } from '@/types/coupleHealthTypes';
+import CoupleHealthRadarChart from '@/components/CoupleHealthRadarChart';
 import { createClient } from '@/lib/supabase/client';
 
 export default function AdminRespostasPage() {
@@ -41,12 +48,15 @@ export default function AdminRespostasPage() {
   const [idiomaResult, setIdiomaResult] = useState<any>(null);
   const [idiomaAnswers, setIdiomaAnswers] = useState<any[]>([]);
   const [desireMapResult, setDesireMapResult] = useState<DesireMapResponse | null>(null);
+  const [healthMapResult, setHealthMapResult] = useState<CoupleHealthMapResponse | null>(null);
+  const [spouseHealthMapResult, setSpouseHealthMapResult] = useState<CoupleHealthMapResponse | null>(null);
   const [userDiagnostics, setUserDiagnostics] = useState<UserDiagnostic[]>([]);
 
   // Estados de visualização / acordeão
   const [showIdiomaDetails, setShowIdiomaDetails] = useState(false);
   const [showTempDetails, setShowTempDetails] = useState(false);
   const [showDesireMapDetails, setShowDesireMapDetails] = useState(true);
+  const [showHealthMapDetails, setShowHealthMapDetails] = useState(true);
 
   // Inicializa com o primeiro aluno da lista se nenhum estiver selecionado
   useEffect(() => {
@@ -82,6 +92,8 @@ export default function AdminRespostasPage() {
     let fetchedIdiomaResult: any = null;
     let fetchedIdiomaAnswers: any[] = [];
     let fetchedDesireMap: DesireMapResponse | null = null;
+    let fetchedHealthMap: CoupleHealthMapResponse | null = null;
+    let fetchedSpouseHealthMap: CoupleHealthMapResponse | null = null;
     let fetchedDiagnostics: UserDiagnostic[] = [];
 
     if (supabase && validIds.length > 0) {
@@ -157,6 +169,36 @@ export default function AdminRespostasPage() {
         if (dbDesireMap) {
           fetchedDesireMap = dbDesireMap as DesireMapResponse;
         }
+
+        // 7. Busca Mapa da Saúde do Casal do Supabase
+        const { data: dbHealthMap } = await supabase
+          .from('couple_health_map_responses')
+          .select('*')
+          .in('user_id', validIds)
+          .order('enviado_em', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (dbHealthMap) {
+          fetchedHealthMap = dbHealthMap as CoupleHealthMapResponse;
+        }
+
+        // Se houver cônjuge, busca também as notas dele para o comparativo da mentoria
+        const activeSpouse = getSpouse(profile.user_id || profile.id);
+        if (activeSpouse) {
+          const spouseValidIds = [activeSpouse.user_id, activeSpouse.id].filter(Boolean);
+          const { data: dbSpouseHealth } = await supabase
+            .from('couple_health_map_responses')
+            .select('*')
+            .in('user_id', spouseValidIds)
+            .order('enviado_em', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (dbSpouseHealth) {
+            fetchedSpouseHealthMap = dbSpouseHealth as CoupleHealthMapResponse;
+          }
+        }
       } catch (err) {
         console.warn('Erro ao carregar dados do Supabase:', err);
       }
@@ -226,6 +268,29 @@ export default function AdminRespostasPage() {
       }
     }
 
+    if (!fetchedHealthMap) {
+      const storedHealthMap =
+        localStorage.getItem(`psi_couple_health_response_${profId}`) ||
+        localStorage.getItem(`psi_couple_health_response_${authId}`);
+      if (storedHealthMap) {
+        try {
+          fetchedHealthMap = JSON.parse(storedHealthMap);
+        } catch {}
+      }
+    }
+
+    const activeSpouseFallback = getSpouse(profile.user_id || profile.id);
+    if (activeSpouseFallback && !fetchedSpouseHealthMap) {
+      const storedSpouseHealth =
+        localStorage.getItem(`psi_couple_health_response_${activeSpouseFallback.id}`) ||
+        localStorage.getItem(`psi_couple_health_response_${activeSpouseFallback.user_id}`);
+      if (storedSpouseHealth) {
+        try {
+          fetchedSpouseHealthMap = JSON.parse(storedSpouseHealth);
+        } catch {}
+      }
+    }
+
     if (fetchedDiagnostics.length === 0) {
       const storedDiags =
         localStorage.getItem(`psi_diagnostics_${profId}`) ||
@@ -242,6 +307,8 @@ export default function AdminRespostasPage() {
     setTempResult(fetchedTempResult);
     setTempAnswers(fetchedTempAnswers);
     setDesireMapResult(fetchedDesireMap);
+    setHealthMapResult(fetchedHealthMap);
+    setSpouseHealthMapResult(fetchedSpouseHealthMap);
     setUserDiagnostics(fetchedDiagnostics);
     setLoadingStudentData(false);
   };
@@ -255,6 +322,8 @@ export default function AdminRespostasPage() {
       setTempResult(null);
       setTempAnswers([]);
       setDesireMapResult(null);
+      setHealthMapResult(null);
+      setSpouseHealthMapResult(null);
       setUserDiagnostics([]);
     }
   }, [selectedProfile?.id, selectedProfile?.user_id]);
@@ -268,7 +337,12 @@ export default function AdminRespostasPage() {
     setTimeout(() => setIsRefreshing(false), 500);
   };
 
-  const hasAnyData = !!tempResult || !!idiomaResult || !!desireMapResult || userDiagnostics.length > 0;
+  const hasAnyData =
+    !!tempResult ||
+    !!idiomaResult ||
+    !!desireMapResult ||
+    !!healthMapResult ||
+    userDiagnostics.length > 0;
 
   return (
     <div className="space-y-6">
@@ -871,6 +945,199 @@ export default function AdminRespostasPage() {
                   )}
 
                   {/* ======================================================== */}
+                  {/* 4. MAPA DA SAÚDE DO CASAL (RADAR + COMPARAÇÃO) */}
+                  {/* ======================================================== */}
+                  {healthMapResult && (
+                    <div className="p-6 rounded-2xl bg-white border border-brand-200 shadow-sm space-y-5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-100 pb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center font-bold border border-brand-200 shadow-xs">
+                            <Activity className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[10px] font-bold text-brand-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-brand-200 uppercase tracking-wider">
+                                8 Pilares • Escala 1 a 10
+                              </span>
+                              {spouse && spouseHealthMapResult ? (
+                                <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200 inline-flex items-center gap-1">
+                                  <Users className="w-3 h-3 text-indigo-600" />
+                                  Comparativo com {spouse.nome.split(' ')[0]} Disponível
+                                </span>
+                              ) : spouse ? (
+                                <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 inline-flex items-center gap-1">
+                                  <Clock className="w-3 h-3 text-amber-600" />
+                                  Aguardando {spouse.nome.split(' ')[0]}
+                                </span>
+                              ) : null}
+                            </div>
+                            <h4 className="text-base font-bold text-warm-900 font-heading">
+                              {COUPLE_HEALTH_META.title}
+                            </h4>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-start sm:self-auto">
+                          <span className="text-[11px] text-warm-500 flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {new Date(healthMapResult.enviado_em).toLocaleDateString('pt-BR')}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowHealthMapDetails(!showHealthMapDetails)}
+                            className="px-2.5 py-1 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                          >
+                            <span>{showHealthMapDetails ? 'Recolher' : 'Visualizar'}</span>
+                            {showHealthMapDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {showHealthMapDetails && (
+                        <div className="space-y-6 animate-in fade-in duration-150">
+                          {/* Gráfico Radar */}
+                          <div className="p-4 rounded-2xl bg-warm-50/50 border border-warm-200 flex flex-col items-center">
+                            <CoupleHealthRadarChart
+                              userScores={{
+                                p01_financeira: healthMapResult.p01_financeira,
+                                p02_rotina: healthMapResult.p02_rotina,
+                                p03_familiar: healthMapResult.p03_familiar,
+                                p04_dialogo: healthMapResult.p04_dialogo,
+                                p05_tempo: healthMapResult.p05_tempo,
+                                p06_conexao: healthMapResult.p06_conexao,
+                                p07_quimica: healthMapResult.p07_quimica,
+                                p08_valores: healthMapResult.p08_valores,
+                              }}
+                              spouseScores={
+                                spouseHealthMapResult
+                                  ? {
+                                      p01_financeira: spouseHealthMapResult.p01_financeira,
+                                      p02_rotina: spouseHealthMapResult.p02_rotina,
+                                      p03_familiar: spouseHealthMapResult.p03_familiar,
+                                      p04_dialogo: spouseHealthMapResult.p04_dialogo,
+                                      p05_tempo: spouseHealthMapResult.p05_tempo,
+                                      p06_conexao: spouseHealthMapResult.p06_conexao,
+                                      p07_quimica: spouseHealthMapResult.p07_quimica,
+                                      p08_valores: spouseHealthMapResult.p08_valores,
+                                    }
+                                  : null
+                              }
+                              userName={selectedProfile.nome.split(' ')[0]}
+                              spouseName={spouse ? spouse.nome.split(' ')[0] : 'Cônjuge'}
+                              showLegend={!!spouseHealthMapResult}
+                            />
+                          </div>
+
+                          {/* Se houver cônjuge e ambos responderam: Tabela Comparativa */}
+                          {spouseHealthMapResult && spouse && (
+                            <div className="p-4 rounded-2xl bg-indigo-50/30 border border-indigo-100 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <h5 className="text-xs font-bold text-indigo-900 uppercase tracking-wider flex items-center gap-1.5">
+                                  <Users className="w-3.5 h-3.5 text-indigo-600" />
+                                  Comparativo do Casal (Semana 6)
+                                </h5>
+                                <span className="text-[10px] text-indigo-600 font-semibold">
+                                  Diferença &gt; 3 = Ponto cego
+                                </span>
+                              </div>
+
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse text-xs">
+                                  <thead>
+                                    <tr className="border-b border-indigo-100 text-indigo-950 font-bold uppercase tracking-wider bg-white/70">
+                                      <th className="py-2.5 px-3">Pilar</th>
+                                      <th className="py-2.5 px-3 text-center">{selectedProfile.nome.split(' ')[0]}</th>
+                                      <th className="py-2.5 px-3 text-center">{spouse.nome.split(' ')[0]}</th>
+                                      <th className="py-2.5 px-3 text-center">Diferença</th>
+                                      <th className="py-2.5 px-3 text-center">Diagnóstico</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-indigo-100/70">
+                                    {COUPLE_HEALTH_PILLARS.map((p) => {
+                                      const uVal = (healthMapResult as any)[p.key] as number;
+                                      const sVal = (spouseHealthMapResult as any)[p.key] as number;
+                                      const diff = Math.abs(uVal - sVal);
+                                      const isBlindSpot = diff > 3;
+
+                                      return (
+                                        <tr
+                                          key={p.key}
+                                          className={isBlindSpot ? 'bg-rose-50/70 font-semibold' : 'bg-white/40'}
+                                        >
+                                          <td className="py-2 px-3 text-warm-900">
+                                            #{p.number} {p.title}
+                                          </td>
+                                          <td className="py-2 px-3 text-center font-extrabold text-[#e41e94]">
+                                            {uVal}
+                                          </td>
+                                          <td className="py-2 px-3 text-center font-extrabold text-indigo-700">
+                                            {sVal}
+                                          </td>
+                                          <td className="py-2 px-3 text-center font-bold text-warm-900">
+                                            {diff} pts
+                                          </td>
+                                          <td className="py-2 px-3 text-center">
+                                            {isBlindSpot ? (
+                                              <span className="px-2 py-0.5 rounded-full bg-rose-100 text-brand-800 text-[10px] font-extrabold border border-brand-300 inline-flex items-center gap-1">
+                                                <AlertTriangle className="w-3 h-3 text-brand-600" />
+                                                Ponto cego
+                                              </span>
+                                            ) : (
+                                              <span className="text-[10px] text-emerald-600 font-bold">
+                                                Alinhados
+                                              </span>
+                                            )}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Notas individuais por pilar */}
+                          <div className="space-y-2">
+                            <h5 className="text-xs font-bold text-warm-900 uppercase tracking-wider">
+                              Notas por Pilar ({selectedProfile.nome.split(' ')[0]})
+                            </h5>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                              {COUPLE_HEALTH_PILLARS.map((p) => {
+                                const val = (healthMapResult as any)[p.key] as number;
+                                const isAttention = val >= 1 && val <= 6;
+                                return (
+                                  <div
+                                    key={p.key}
+                                    className={`p-3 rounded-xl border text-xs space-y-1 ${
+                                      isAttention ? 'bg-amber-50/50 border-amber-200' : 'bg-white border-warm-200'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] text-warm-400 font-bold">#{p.number}</span>
+                                      {isAttention ? (
+                                        <span className="text-[9px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">
+                                          Atenção
+                                        </span>
+                                      ) : (
+                                        <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                                          OK
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="font-bold text-warm-900 text-[11px] truncate">{p.title}</p>
+                                    <p className="text-base font-extrabold text-[#e41e94]">{val} / 10</p>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ======================================================== */}
                   {/* OUTROS DIAGNÓSTICOS CLÍNICOS */}
                   {/* ======================================================== */}
                   {userDiagnostics
@@ -879,7 +1146,11 @@ export default function AdminRespostasPage() {
                         diag.quiz_id !== 'mapa-do-desejo' &&
                         diag.quiz_id !== 'quiz-mapa-do-desejo' &&
                         !diag.id?.startsWith('desire-map-') &&
-                        !diag.titulo_resultado?.toLowerCase().includes('mapa do desejo')
+                        !diag.titulo_resultado?.toLowerCase().includes('mapa do desejo') &&
+                        diag.quiz_id !== 'mapa-da-saude' &&
+                        diag.quiz_id !== 'quiz-mapa-da-saude' &&
+                        !diag.id?.startsWith('health-map-') &&
+                        !diag.titulo_resultado?.toLowerCase().includes('mapa da saúde')
                     )
                     .map((diag) => (
                     <div

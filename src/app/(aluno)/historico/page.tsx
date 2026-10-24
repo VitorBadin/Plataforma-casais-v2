@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { UserDiagnostic } from '@/types/database';
-import { History, Award, ArrowRight, Calendar, Sparkles, Lock } from 'lucide-react';
+import { History, Award, ArrowRight, Calendar, Sparkles, Lock, Activity } from 'lucide-react';
 
 import { fetchUserQuizProgress } from '@/lib/userDiagnostics';
 
@@ -89,6 +89,13 @@ export default function HistoricoPage() {
               diag.titulo_resultado?.toLowerCase().includes('mapa do desejo') ||
               diag.quiz_titulo?.toLowerCase().includes('mapa do desejo');
 
+            const isMapaSaude =
+              diag.quiz_id === 'mapa-da-saude' ||
+              diag.quiz_id === 'quiz-mapa-da-saude' ||
+              diag.id?.startsWith('health-map-') ||
+              diag.titulo_resultado?.toLowerCase().includes('mapa da saúde') ||
+              diag.quiz_titulo?.toLowerCase().includes('mapa da saúde');
+
             return (
               <div
                 key={diag.id}
@@ -114,6 +121,12 @@ export default function HistoricoPage() {
                         Pasta do Casal (Individual)
                       </span>
                     )}
+                    {isMapaSaude && (
+                      <span className="text-[10px] font-bold text-brand-800 bg-rose-50 px-2.5 py-0.5 rounded-full border border-brand-200 inline-flex items-center gap-1">
+                        <Activity className="w-3 h-3 text-brand-600" />
+                        Radar & Menu de Ações
+                      </span>
+                    )}
                   </div>
 
                   <h3 className="text-base font-bold text-warm-900 font-heading">
@@ -133,6 +146,15 @@ export default function HistoricoPage() {
                     >
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>Ver Minhas Respostas</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  ) : isMapaSaude ? (
+                    <Link
+                      href="/quizzes/mapa-da-saude/resultado"
+                      className="px-4 py-2.5 rounded-xl brand-gradient text-white text-xs font-bold shadow-xs hover:opacity-95 transition-all inline-flex items-center justify-center gap-1.5 shrink-0"
+                    >
+                      <Activity className="w-3.5 h-3.5" />
+                      <span>Ver Meu Mapa & Ações</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   ) : isTemperamento ? (

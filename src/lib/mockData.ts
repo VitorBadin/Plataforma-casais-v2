@@ -69,6 +69,23 @@ export const INITIAL_QUIZZES: Quiz[] = [
     ],
   },
   {
+    id: 'mapa-da-saude',
+    titulo: 'Mapa da Saúde do Casal',
+    descricao: 'Protocolo de avaliação dos 8 pilares da relação em notas de 1 a 10 com diagnóstico visual radar, menu de ações práticas e comparativo do casal.',
+    categoria: 'Saúde & Alinhamento Conjugal',
+    ativo: true,
+    criado_em: '2026-09-20T10:00:00Z',
+    questions: [
+      ...Array.from({ length: 8 }, (_, i) => ({
+        id: `qm-saude-${i + 1}`,
+        quiz_id: 'mapa-da-saude',
+        texto: `Pilar ${i + 1}`,
+        tipo: 'escala' as const,
+        ordem: i + 1,
+      })),
+    ],
+  },
+  {
     id: 'quiz-1',
     titulo: 'Mapeamento da Saúde da Comunicação no Relacionamento',
     descricao: 'Identifique os padrões de escuta, reatividade e abertura emocional que impactam o diálogo cotidiano do casal.',

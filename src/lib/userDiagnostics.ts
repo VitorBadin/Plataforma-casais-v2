@@ -5,6 +5,7 @@ import { TEMPERAMENTO_META } from '@/lib/temperamentoData';
 import { IdiomaAmorResult, IdiomaAmor } from '@/types/idiomaAmorTypes';
 import { TemperamentoResult, Temperamento } from '@/types/temperamentoTypes';
 import { DesireMapResponse } from '@/types/desireMapTypes';
+import { CoupleHealthMapResponse } from '@/types/coupleHealthTypes';
 
 export interface UserQuizProgress {
   answeredIds: string[];
@@ -12,6 +13,7 @@ export interface UserQuizProgress {
   idiomaResult: IdiomaAmorResult | null;
   temperamentoResult: TemperamentoResult | null;
   desireMapResult?: DesireMapResponse | null;
+  healthMapResult?: CoupleHealthMapResponse | null;
 }
 
 export async function fetchUserQuizProgress(user: Profile | null): Promise<UserQuizProgress> {
@@ -31,6 +33,7 @@ export async function fetchUserQuizProgress(user: Profile | null): Promise<UserQ
   let fetchedIdiomaResult: IdiomaAmorResult | null = null;
   let fetchedTempResult: TemperamentoResult | null = null;
   let fetchedDesireMapResult: DesireMapResponse | null = null;
+  let fetchedHealthMapResult: CoupleHealthMapResponse | null = null;
   let fetchedDbDiagnostics: UserDiagnostic[] = [];
 
   const supabase = createClient();
@@ -142,6 +145,19 @@ export async function fetchUserQuizProgress(user: Profile | null): Promise<UserQ
       if (dbDesireMap) {
         fetchedDesireMapResult = dbDesireMap as DesireMapResponse;
       }
+
+      // 5. Busca Mapa da Saúde do Casal
+      const { data: dbHealthMap } = await supabase
+        .from('couple_health_map_responses')
+        .select('*')
+        .in('user_id', validIds)
+        .order('enviado_em', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (dbHealthMap) {
+        fetchedHealthMapResult = dbHealthMap as CoupleHealthMapResponse;
+      }
     } catch (err) {
       console.warn('Erro ao carregar dados de diagnósticos do Supabase:', err);
     }
@@ -177,6 +193,17 @@ export async function fetchUserQuizProgress(user: Profile | null): Promise<UserQ
     if (storedDesireMap) {
       try {
         fetchedDesireMapResult = JSON.parse(storedDesireMap);
+      } catch {}
+    }
+  }
+
+  if (!fetchedHealthMapResult) {
+    const storedHealthMap =
+      localStorage.getItem(`psi_couple_health_response_${profId}`) ||
+      localStorage.getItem(`psi_couple_health_response_${authUserId}`);
+    if (storedHealthMap) {
+      try {
+        fetchedHealthMapResult = JSON.parse(storedHealthMap);
       } catch {}
     }
   }
@@ -245,6 +272,20 @@ export async function fetchUserQuizProgress(user: Profile | null): Promise<UserQ
     });
   }
 
+  // Adiciona Mapa da Saúde do Casal à lista de diagnósticos
+  if (fetchedHealthMapResult && !allDiagnostics.some((d) => d.quiz_id === 'mapa-da-saude' || d.quiz_id === 'quiz-mapa-da-saude')) {
+    allDiagnostics.push({
+      id: fetchedHealthMapResult.id || `health-map-${authUserId}`,
+      user_id: authUserId,
+      quiz_id: 'mapa-da-saude',
+      pontuacao_total: 0,
+      titulo_resultado: 'Mapa da Saúde do Casal',
+      resultado_texto: 'Avaliação dos 8 pilares da relação com diagnóstico visual radar, comparativo do casal e menu de ações para subir de nível.',
+      gerado_em: fetchedHealthMapResult.enviado_em || fetchedHealthMapResult.criado_em || new Date().toISOString(),
+      quiz_titulo: 'Mapa da Saúde do Casal',
+    });
+  }
+
   // Ordena diagnósticos por data decrescente
   allDiagnostics.sort((a, b) => new Date(b.gerado_em).getTime() - new Date(a.gerado_em).getTime());
 
@@ -255,6 +296,10 @@ export async function fetchUserQuizProgress(user: Profile | null): Promise<UserQ
   if (fetchedDesireMapResult) {
     answeredIdsSet.add('mapa-do-desejo');
     answeredIdsSet.add('quiz-mapa-do-desejo');
+  }
+  if (fetchedHealthMapResult) {
+    answeredIdsSet.add('mapa-da-saude');
+    answeredIdsSet.add('quiz-mapa-da-saude');
   }
   allDiagnostics.forEach((d) => {
     if (d.quiz_id) answeredIdsSet.add(d.quiz_id);
@@ -276,6 +321,10 @@ export async function fetchUserQuizProgress(user: Profile | null): Promise<UserQ
       localStorage.setItem(`psi_desire_map_response_${profId}`, JSON.stringify(fetchedDesireMapResult));
       localStorage.setItem(`psi_desire_map_response_${authUserId}`, JSON.stringify(fetchedDesireMapResult));
     }
+    if (fetchedHealthMapResult) {
+      localStorage.setItem(`psi_couple_health_response_${profId}`, JSON.stringify(fetchedHealthMapResult));
+      localStorage.setItem(`psi_couple_health_response_${authUserId}`, JSON.stringify(fetchedHealthMapResult));
+    }
     localStorage.setItem(`psi_diagnostics_${profId}`, JSON.stringify(allDiagnostics));
     localStorage.setItem(`psi_diagnostics_${authUserId}`, JSON.stringify(allDiagnostics));
   } catch (err) {
@@ -288,5 +337,6 @@ export async function fetchUserQuizProgress(user: Profile | null): Promise<UserQ
     idiomaResult: fetchedIdiomaResult,
     temperamentoResult: fetchedTempResult,
     desireMapResult: fetchedDesireMapResult,
+    healthMapResult: fetchedHealthMapResult,
   };
 }

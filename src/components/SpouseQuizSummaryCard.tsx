@@ -35,10 +35,15 @@ interface SpouseQuizData {
 }
 
 export default function SpouseQuizSummaryCard({ quizId, className = '' }: SpouseQuizSummaryCardProps) {
-  // Regra de privacidade clínica estrita:
-  // O Mapa do Desejo do Casal é estritamente individual e confidencial.
-  // Nunca exibir orientações nem revelar respostas/status ao cônjuge.
-  if (quizId === 'mapa-do-desejo' || quizId === 'quiz-mapa-do-desejo') {
+  // Regra de privacidade clínica:
+  // - O Mapa do Desejo do Casal é estritamente confidencial/individual (nunca compartilhado).
+  // - O Mapa da Saúde do Casal possui sua própria seção de comparação radar/pontos cegos (não usa partner_guidance).
+  if (
+    quizId === 'mapa-do-desejo' ||
+    quizId === 'quiz-mapa-do-desejo' ||
+    quizId === 'mapa-da-saude' ||
+    quizId === 'quiz-mapa-da-saude'
+  ) {
     return null;
   }
 

@@ -198,6 +198,17 @@ export default function TermosDeConsentimentoPage() {
               </p>
             </div>
 
+            {/* Destaque Específico: Mapa da Saúde do Casal (Comparativo Automático Condicional) */}
+            <div className="p-4 rounded-2xl bg-rose-50 border border-brand-200 text-brand-900 space-y-1.5">
+              <p className="font-bold flex items-center gap-1.5 text-xs uppercase tracking-wider text-brand-800">
+                <ShieldCheck className="w-4 h-4 text-brand-600 shrink-0" />
+                Mapa da Saúde do Casal (Comparativo Condicional):
+              </p>
+              <p className="text-xs leading-relaxed">
+                No caso do <strong>Mapa da Saúde do Casal</strong>, o preenchimento das notas de 1 a 10 é individual e silencioso. Suas notas são mantidas em sigilo absoluto até que <strong>ambos os cônjuges vinculados tenham concluído e enviado suas respectivas avaliações</strong>. Somente após a submissão de ambas as partes é que o comparativo visual de radar e a análise de discrepâncias (pontos cegos) tornam-se visíveis para o casal, servindo de ferramenta de diagnóstico para a aula prática da Semana 6.
+              </p>
+            </div>
+
             <p className="text-xs text-warm-700 italic">
               Se você não deseja que esse vínculo seja realizado, comunique isso diretamente à profissional responsável pela mentoria.
             </p>
