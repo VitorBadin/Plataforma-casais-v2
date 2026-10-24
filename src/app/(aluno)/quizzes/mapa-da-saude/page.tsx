@@ -110,8 +110,19 @@ export default function MapaDaSaudePage() {
     setIsSubmitting(true);
     setValidationError(null);
 
+    const supabase = createClient();
+    let effectiveUserId = authUserId;
+    if (supabase) {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session?.user?.id) {
+          effectiveUserId = sessionData.session.user.id;
+        }
+      } catch {}
+    }
+
     const payload: Omit<CoupleHealthMapResponse, 'id' | 'criado_em'> = {
-      user_id: authUserId,
+      user_id: effectiveUserId,
       p01_financeira: formData.p01_financeira!,
       p02_rotina: formData.p02_rotina!,
       p03_familiar: formData.p03_familiar!,
@@ -124,19 +135,18 @@ export default function MapaDaSaudePage() {
     };
 
     try {
-      // 1. Salva no Supabase
-      const supabase = createClient();
+      // 1. Salva no Supabase via upsert
       let savedId = `local-${Date.now()}`;
 
-      if (supabase) {
+      if (supabase && effectiveUserId) {
         const { data, error } = await supabase
           .from('couple_health_map_responses')
-          .insert(payload)
+          .upsert(payload, { onConflict: 'user_id' })
           .select('id')
-          .single();
+          .maybeSingle();
 
         if (error) {
-          console.warn('Erro ao salvar no Supabase:', error);
+          console.error('Erro ao salvar Mapa da Saúde no Supabase:', error);
         } else if (data) {
           savedId = data.id;
         }
@@ -151,6 +161,7 @@ export default function MapaDaSaudePage() {
       if (profId) {
         localStorage.setItem(`psi_couple_health_response_${profId}`, JSON.stringify(completeResponse));
       }
+      localStorage.setItem(`psi_couple_health_response_${effectiveUserId}`, JSON.stringify(completeResponse));
       localStorage.setItem(`psi_couple_health_response_${authUserId}`, JSON.stringify(completeResponse));
 
       // 3. Redireciona para o resultado

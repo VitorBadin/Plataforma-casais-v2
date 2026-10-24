@@ -208,6 +208,29 @@ export async function fetchUserQuizProgress(user: Profile | null): Promise<UserQ
     }
   }
 
+  // Se a resposta do mapa da saúde estava apenas no cache local, tenta sincronizar no Supabase
+  if (fetchedHealthMapResult && supabase && authUserId && fetchedHealthMapResult.id?.startsWith('local-')) {
+    try {
+      await supabase
+        .from('couple_health_map_responses')
+        .upsert(
+          {
+            user_id: authUserId,
+            p01_financeira: fetchedHealthMapResult.p01_financeira,
+            p02_rotina: fetchedHealthMapResult.p02_rotina,
+            p03_familiar: fetchedHealthMapResult.p03_familiar,
+            p04_dialogo: fetchedHealthMapResult.p04_dialogo,
+            p05_tempo: fetchedHealthMapResult.p05_tempo,
+            p06_conexao: fetchedHealthMapResult.p06_conexao,
+            p07_quimica: fetchedHealthMapResult.p07_quimica,
+            p08_valores: fetchedHealthMapResult.p08_valores,
+            enviado_em: fetchedHealthMapResult.enviado_em || new Date().toISOString(),
+          },
+          { onConflict: 'user_id' }
+        );
+    } catch {}
+  }
+
   if (fetchedDbDiagnostics.length === 0) {
     const storedDiags =
       localStorage.getItem(`psi_diagnostics_${profId}`) ||

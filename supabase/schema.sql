@@ -701,25 +701,40 @@ CREATE INDEX IF NOT EXISTS idx_couple_health_map_user ON public.couple_health_ma
 
 ALTER TABLE public.couple_health_map_responses ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Leitura de mapa da saude proprio admin ou conjuge se ambos responderam" ON public.couple_health_map_responses
+-- Função auxiliar SECURITY DEFINER para verificar se o usuário respondeu sem disparar recursão no RLS
+CREATE OR REPLACE FUNCTION public.user_has_health_map_response(uid UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.couple_health_map_responses WHERE user_id = uid
+  );
+$$;
+
+CREATE POLICY "Leitura de mapa da saude proprio admin ou conjuge se ambos resp" ON public.couple_health_map_responses
   FOR SELECT USING (
     auth.uid() = user_id
     OR public.is_admin()
     OR (
-      EXISTS (
+      public.user_has_health_map_response(auth.uid())
+      AND EXISTS (
         SELECT 1 FROM public.couples c
         WHERE (c.user_id_1 = auth.uid() AND c.user_id_2 = public.couple_health_map_responses.user_id)
            OR (c.user_id_2 = auth.uid() AND c.user_id_1 = public.couple_health_map_responses.user_id)
-      )
-      AND EXISTS (
-        SELECT 1 FROM public.couple_health_map_responses my_resp
-        WHERE my_resp.user_id = auth.uid()
       )
     )
   );
 
 CREATE POLICY "Insercao de mapa da saude proprio" ON public.couple_health_map_responses
   FOR INSERT WITH CHECK (auth.uid() = user_id AND public.is_ativo());
+
+CREATE POLICY "Atualizacao de mapa da saude proprio" ON public.couple_health_map_responses
+  FOR UPDATE
+  USING (auth.uid() = user_id AND public.is_ativo())
+  WITH CHECK (auth.uid() = user_id AND public.is_ativo());
 
 CREATE POLICY "Admin gerencia mapa da saude" ON public.couple_health_map_responses
   FOR ALL USING (public.is_admin());

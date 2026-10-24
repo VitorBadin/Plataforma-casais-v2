@@ -60,19 +60,30 @@ export default function MapaDaSaudeResultadoPage() {
         return;
       }
 
+      let realAuthId = authUserId;
       let myResp: CoupleHealthMapResponse | null = null;
       let spouseResp: CoupleHealthMapResponse | null = null;
       let spouseAnswered = false;
 
       const supabase = createClient();
+      if (supabase) {
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData?.session?.user?.id) {
+            realAuthId = sessionData.session.user.id;
+          }
+        } catch {}
+      }
+
+      const mySearchIds = Array.from(new Set([realAuthId, authUserId, profId].filter(Boolean)));
 
       // 1. Carrega dados do próprio usuário
-      if (supabase) {
+      if (supabase && mySearchIds.length > 0) {
         try {
           const { data } = await supabase
             .from('couple_health_map_responses')
             .select('*')
-            .in('user_id', [authUserId, profId].filter(Boolean))
+            .in('user_id', mySearchIds)
             .order('enviado_em', { ascending: false })
             .limit(1)
             .maybeSingle();
@@ -89,6 +100,7 @@ export default function MapaDaSaudeResultadoPage() {
       if (!myResp) {
         const stored =
           localStorage.getItem(`psi_couple_health_response_${profId}`) ||
+          localStorage.getItem(`psi_couple_health_response_${realAuthId}`) ||
           localStorage.getItem(`psi_couple_health_response_${authUserId}`);
         if (stored) {
           try {
@@ -97,28 +109,50 @@ export default function MapaDaSaudeResultadoPage() {
         }
       }
 
+      // Se temos resposta local mas ela não constava no Supabase, sincroniza agora
+      if (myResp && supabase && realAuthId) {
+        try {
+          const { data: synced } = await supabase
+            .from('couple_health_map_responses')
+            .upsert(
+              {
+                user_id: realAuthId,
+                p01_financeira: myResp.p01_financeira,
+                p02_rotina: myResp.p02_rotina,
+                p03_familiar: myResp.p03_familiar,
+                p04_dialogo: myResp.p04_dialogo,
+                p05_tempo: myResp.p05_tempo,
+                p06_conexao: myResp.p06_conexao,
+                p07_quimica: myResp.p07_quimica,
+                p08_valores: myResp.p08_valores,
+                enviado_em: myResp.enviado_em || new Date().toISOString(),
+              },
+              { onConflict: 'user_id' }
+            )
+            .select('id')
+            .maybeSingle();
+
+          if (synced?.id) {
+            myResp.id = synced.id;
+          }
+        } catch (syncErr) {
+          console.warn('Erro no autosync local para Supabase:', syncErr);
+        }
+      }
+
       // 2. Se houver cônjuge vinculado, verifica se ele respondeu e busca as notas
       if (spouse) {
         const spouseAuthId = spouse.user_id || spouse.id;
         const spouseProfId = spouse.id;
+        const spouseSearchIds = Array.from(new Set([spouseAuthId, spouseProfId].filter(Boolean)));
 
-        if (supabase && spouseAuthId) {
+        if (supabase && spouseSearchIds.length > 0) {
           try {
-            // Verifica status pelo helper RPC
-            const { data: answeredRpc } = await supabase.rpc(
-              'has_spouse_answered_health_map',
-              { spouse_id: spouseAuthId }
-            );
-
-            if (answeredRpc === true) {
-              spouseAnswered = true;
-            }
-
             // Tenta buscar as notas do parceiro (liberado por RLS se ambos responderam)
             const { data: spouseData } = await supabase
               .from('couple_health_map_responses')
               .select('*')
-              .in('user_id', [spouseAuthId, spouseProfId].filter(Boolean))
+              .in('user_id', spouseSearchIds)
               .order('enviado_em', { ascending: false })
               .limit(1)
               .maybeSingle();
@@ -126,6 +160,16 @@ export default function MapaDaSaudeResultadoPage() {
             if (spouseData) {
               spouseResp = spouseData as CoupleHealthMapResponse;
               spouseAnswered = true;
+            } else if (spouseAuthId) {
+              // Verifica status pelo helper RPC caso ainda não tenha permissão de leitura
+              const { data: answeredRpc } = await supabase.rpc(
+                'has_spouse_answered_health_map',
+                { spouse_id: spouseAuthId }
+              );
+
+              if (answeredRpc === true) {
+                spouseAnswered = true;
+              }
             }
           } catch (err) {
             console.warn('Erro ao verificar cônjuge no Supabase:', err);
