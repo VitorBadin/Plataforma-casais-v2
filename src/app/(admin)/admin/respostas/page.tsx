@@ -1037,7 +1037,7 @@ export default function AdminRespostasPage() {
                                   Comparativo do Casal (Semana 6)
                                 </h5>
                                 <span className="text-[10px] text-indigo-600 font-semibold">
-                                  Diferença &gt; 3 = Ponto cego
+                                  Diferença &ge; 3 = Ponto cego
                                 </span>
                               </div>
 
@@ -1057,7 +1057,7 @@ export default function AdminRespostasPage() {
                                       const uVal = (healthMapResult as any)[p.key] as number;
                                       const sVal = (spouseHealthMapResult as any)[p.key] as number;
                                       const diff = Math.abs(uVal - sVal);
-                                      const isBlindSpot = diff > 3;
+                                      const isBlindSpot = diff >= 3;
 
                                       return (
                                         <tr

@@ -16,7 +16,7 @@ export const COUPLE_HEALTH_META = {
     },
     {
       title: 'Identificando os Gaps',
-      text: 'Na nossa aula ao vivo da Semana 6, eu vou te ensinar a analisar as discrepâncias de notas entre vocês. Se um pilar tem uma diferença de nota maior que 3 pontos entre vocês, ali está um ponto cego que precisa de diálogo guiado.',
+      text: 'Na nossa aula ao vivo da Semana 6, eu vou te ensinar a analisar as discrepâncias de notas entre vocês. Se um pilar tem uma diferença de nota a partir de 3 pontos (diferença ≥ 3) entre vocês, ali está um ponto cego que precisa de diálogo guiado.',
     },
   ],
   menuAcoesNotice:
@@ -30,7 +30,7 @@ export const COUPLE_HEALTH_META = {
   menuAcoesIntro:
     'Se você ou o seu parceiro atribuíram uma nota entre 1 e 6 em algum dos pilares, escolham uma ação abaixo para executar nas próximas duas semanas:',
   blindSpotOrientation:
-    'Se um pilar tem uma diferença de nota maior que 3 pontos entre vocês, ali está um ponto cego que precisa de diálogo guiado.',
+    'Se um pilar tem uma diferença de nota a partir de 3 pontos (diferença ≥ 3) entre vocês, ali está um ponto cego que precisa de diálogo guiado.',
   noBlindSpotOrientation:
     'Nenhum ponto cego identificado: vocês estão com percepções próximas em todos os pilares.',
 };

@@ -202,7 +202,7 @@ export default function MapaDaSaudeResultadoPage() {
             const userVal = myResp![p.key];
             const spouseVal = spouseResp ? spouseResp[p.key] : null;
             const diff = spouseVal !== null ? Math.abs(userVal - spouseVal) : 0;
-            const isBlindSpot = diff > 3;
+            const isBlindSpot = diff >= 3;
             const needsAttention = userVal <= 6 || (spouseVal !== null && spouseVal <= 6);
 
             if (isBlindSpot || needsAttention) {
@@ -285,7 +285,7 @@ export default function MapaDaSaudeResultadoPage() {
     const uVal = userScores[pillar.key];
     const sVal = spouseScores ? spouseScores[pillar.key] : 0;
     const diff = Math.abs(uVal - sVal);
-    const isBlindSpot = hasComparison && diff > 3; // > 3 (exatamente 3 não é)
+    const isBlindSpot = hasComparison && diff >= 3; // >= 3 (diferença a partir de 3 pontos)
     const needsAttentionUser = uVal >= 1 && uVal <= 6;
     const needsAttentionSpouse = hasComparison && sVal >= 1 && sVal <= 6;
     const needsAttentionAny = needsAttentionUser || needsAttentionSpouse;

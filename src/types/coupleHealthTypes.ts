@@ -38,7 +38,7 @@ export interface CoupleHealthComparisonItem {
   userScore: number;
   spouseScore: number;
   diff: number;
-  isBlindSpot: boolean; // diff > 3 (i.e. >= 4)
+  isBlindSpot: boolean; // diff >= 3
   needsAttentionUser: boolean; // 1 <= userScore <= 6
   needsAttentionSpouse: boolean; // 1 <= spouseScore <= 6
   needsAttentionAny: boolean; // userScore <= 6 || spouseScore <= 6
